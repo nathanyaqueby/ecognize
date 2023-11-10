@@ -6,7 +6,7 @@ st.title("ECOGNIZE prototype")
 openai.api_key = st.secrets["openai_api_key"]
 
 if "openai_model" not in st.session_state:
-    st.session_state["openai_model"] = "gpt-4"
+    st.session_state["openai_model"] = "gpt-4-1106-preview"
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
