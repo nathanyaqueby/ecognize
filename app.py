@@ -17,7 +17,7 @@ for message in st.session_state.messages:
 
 if prompt := st.chat_input("What would you like to summarize?"):
     # adjust prompt to create a summary of what the user wants to know about
-    prompt2 = "Answer and summarize the following query in 1-2 paragraphs:\n" + prompt
+    prompt2 = "Answer the following query and summarize it in 1-2 paragraphs:\n" + prompt
     st.session_state.messages.append({"role": "user", "content": prompt2})
     with st.chat_message("user"):
         st.markdown(prompt)
