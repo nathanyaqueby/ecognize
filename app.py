@@ -1,29 +1,39 @@
-
-import streamlit as st
 import openai
-import sumy
+import streamlit as st
 
-# Set up OpenAI API authentication
+st.title("ECOGNIZE prototype")
+
 openai.api_key = st.secrets["openai_api_key"]
 
-# Set up Streamlit app
-st.title("Sustainable Chatbot")
-query = st.text_input("Enter your query:")
-if st.button("Submit"):
-    # Use GPT-4 to generate a summary of the relevant information from the internet
-    summary = openai.Completion.create(
-        engine="davinci",
-        prompt=query,
-        max_tokens=1024,
-        n=1,
-        stop=None,
-        temperature=0.5,
-    ).choices[0].text
-    
-    # Use sumy to summarize the summary into a more concise and readable format
-    parser = sumy.parsers.plaintext.PlaintextParser.from_string(summary, sumy.tokenizers.Tokenizer("english"))
-    summarizer = sumy.summarizers.lex_rank.LexRankSummarizer()
-    summary = summarizer(parser.document, 3)
-    
-    # Display the summarized information to the user
-    st.write(summary)
+if "openai_model" not in st.session_state:
+    st.session_state["openai_model"] = "gpt-4"
+
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+if prompt := st.chat_input("What would you like to summarize?"):
+    # adjust prompt to create a summary of what the user wants to know about
+    prompt = "Answer and summarize the following query in 1-2 paragraphs:\n" + prompt
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    with st.chat_message("assistant"):
+        message_placeholder = st.empty()
+        full_response = ""
+        for response in openai.ChatCompletion.create(
+            model=st.session_state["openai_model"],
+            messages=[
+                {"role": m["role"], "content": m["content"]}
+                for m in st.session_state.messages
+            ],
+            stream=True,
+        ):
+            full_response += response.choices[0].delta.get("content", "")
+            message_placeholder.markdown(full_response + "▌")
+        message_placeholder.markdown(full_response)
+    st.session_state.messages.append({"role": "assistant", "content": full_response})
