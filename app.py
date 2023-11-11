@@ -149,33 +149,26 @@ if name is not None:
     }
 
     # Assign IDs to existing messages if they don't have one
-    for i, message in enumerate(st.session_state.get('messages', [])):
-        if 'id' not in message:
-            message['id'] = i
-
-    for message in st.session_state.messages:
+    # Loop through stored messages to display them and associated feedback widgets
+    for message in st.session_state.get('messages', []):
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-        # Check if feedback should be displayed for this message
-        message_id = f"feedback_{message['id']}"
-        if message['role'] == 'assistant' and message_id not in st.session_state['feedback']:
-            feedback = collector.st_feedback(
-                component="default",
-                feedback_type="thumbs",
-                model="gpt-3.5-turbo",
-                prompt_id=None,  # see prompts to log prompts and model generations
-                open_feedback_label='[Optional] Provide additional feedback'
-            )
-
-            if feedback:
-                st.session_state['feedback'][message_id] = feedback
-                # Assuming 1 point for each feedback
-                user_points = update_user_points(username, 1)
-                # add a notification that the user has earned a point
-                st.sidebar.success(
-                    f"You have earned a point!  Your points: {user_points}"
+        # Render feedback widget for assistant messages
+        if message['role'] == 'assistant':
+            message_id = f"feedback_{message['id']}"
+            if message_id not in st.session_state.get('feedback', {}):
+                feedback = collector.st_feedback(
+                    component="default",
+                    feedback_type="thumbs",
+                    model=st.session_state["openai_model"],
+                    prompt_id=message['id'],
+                    open_feedback_label='[Optional] Provide additional feedback'
                 )
+                if feedback:
+                    st.session_state['feedback'][message_id] = feedback
+                    user_points = update_user_points(username, 1)
+                    st.sidebar.success(f"You have earned a point!  Your points: {user_points}")
 
     if prompt := st.chat_input("What would you like to summarize?"):
         # adjust prompt to create a summary of what the user wants to know about
