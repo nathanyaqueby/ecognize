@@ -94,25 +94,6 @@ if name is not None:
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
-    
-    for n, msg in enumerate(st.session_state.messages):
-        # st.chat_message(msg["role"]).write(msg["content"])
-
-        if msg["role"] == "assistant":
-            feedback_key = f"feedback_{int(n/2)}"
-
-            if feedback_key not in st.session_state:
-                st.session_state[feedback_key] = 0
-
-             # Render feedback widget
-            feedback = streamlit_feedback(
-                **feedback_kwargs,
-                key=feedback_key,
-            )
-
-            # Update the feedback state
-            if feedback:
-                st.session_state[feedback_key] = feedback
 
     if prompt := st.chat_input("What would you like to summarize?"):
         # adjust prompt to create a summary of what the user wants to know about
@@ -142,6 +123,26 @@ if name is not None:
             # add title to the chart
             st.markdown("### Sustainability score over time")
             st.bar_chart(np.random.randn(30, 3))
+        
+        for n, msg in enumerate(st.session_state.messages):
+        # st.chat_message(msg["role"]).write(msg["content"])
+
+            if msg["role"] == "assistant":
+                feedback_key = f"feedback_{int(n/2)}"
+
+                if feedback_key not in st.session_state:
+                    st.session_state[feedback_key] = 0
+
+                # Render feedback widget
+                feedback = streamlit_feedback(
+                    **feedback_kwargs,
+                    key=feedback_key,
+                )
+
+                # Update the feedback state
+                if feedback:
+                    st.session_state[feedback_key] = feedback
+
         st.session_state.messages.append({"role": "assistant", "content": full_response})
 
     if feedback:
