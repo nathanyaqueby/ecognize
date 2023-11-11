@@ -203,6 +203,17 @@ if name is not None:
             ):
                 full_response += response.choices[0].delta.get("content", "")
                 message_placeholder.markdown(full_response + "▌")
+
+            logged_prompt = collector.log_prompt(
+                config_model={"model": st.session_state["openai_model"]},
+                prompt=prompt,
+                generation=full_response,
+                session_id=st.session_state.session_id,
+                # tags=tags,
+                user_id=str(st.secrets["TRUBRICS_EMAIL"])
+                )
+            st.session_state.prompt_ids.append(logged_prompt.id)
+
             message_placeholder.markdown(full_response)
             # add title to the chart
             # st.markdown("### Sustainability score over time")
