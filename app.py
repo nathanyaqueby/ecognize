@@ -1,5 +1,8 @@
 import openai
 import streamlit as st
+from yaml.loader import SafeLoader
+import streamlit_authenticator as stauth
+import yaml
 
 st.set_page_config(
     layout="wide",
@@ -14,6 +17,30 @@ st.set_page_config(
 )
 
 st.title("ECOGNIZE prototype")
+
+with open("config.yaml") as file:
+    config = yaml.load(file, Loader=SafeLoader)
+with st.spinner(text="In progress..."):
+    authenticator = stauth.Authenticate(
+        config["credentials"],
+        config["cookie"]["name"],
+        config["cookie"]["key"],
+        config["cookie"]["expiry_days"],
+        config["preauthorized"],
+    )
+
+    name, authentication_status, username = authenticator.login("Login", "main")
+
+# write a welcome message
+st.info(
+    f"""
+    Welcome to ECOGNIZE, {name.split[0]}! 🌍
+
+    ECOGNIZE is a prototype that uses OpenAI's GPT-3 to answer questions about sustainability.  It is a prototype for the Junction 2021 hackathon.
+    To get started, type a question in the chat box.  The AI assistant will answer your question and provide a summary of the answer.
+    To learn more about ECOGNIZE, click the "About" button in the top right corner.
+    """
+)
 
 openai.api_key = st.secrets["openai_api_key"]
 
@@ -36,7 +63,7 @@ st.session_state["openai_model"] = st.sidebar.selectbox(
 # add a notification that the user picks the most sustainable option for the model if they pick "gpt-3.5-turbo"
 if st.session_state["openai_model"] == "gpt-4":
     st.sidebar.warning(
-        "You have selected the turbo model. This model is faster but less accurate. Please only use this model if you need a quick answer."
+        "You have selected the largest, least sustainable model.  Please only use this model if you need an extensive answer."
     )
 
 if "messages" not in st.session_state:

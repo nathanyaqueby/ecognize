@@ -1,0 +1,29 @@
+credentials:
+  usernames:
+    nqueby:
+      email: nathanyaqueby21@gmail.com
+      name: Nathanya Queby
+      password: $2b$12$anhQ5jM8qGmRCBWtWT.tCexz2T5auwSWn8ZASLbQUbKAZfntyo7Om
+    tianyi:
+      email: tianyi.pan@gmail.com
+      name: Tianyi Pan
+      password: $2b$12$657oxhRx.VmbmNVDyiQcmuDAveF3p72yU46fb7145pHQNB0SOj7uq
+    angelineov:
+      email: angelineov@gmail.com
+      name: Angeline Jayanegara
+      password: $2b$12$l8jBqBnDn.HhocwQ586BKeykYhalylKhu29YweSX31Wfh5wfY9Bbu
+    cmakafui:
+      email: ckugblenu@gmail.com
+      name: Carl Kugblenu
+      password: $2b$12$d8pVNcU05kZ2/W7GYdss8.TH77Oo86tSrOeijfYN8u06pfIGL/Ajy
+    outokumpu:
+      email: alex@outokumpu.com
+      name: Alex Outokumpu
+      password: $2b$12$n4U5tfVvpR2WH0Mohwavr.R3p.dPbJJnlmjAK8j9Z3eTMBl/xJT5S
+cookie:
+  expiry_days: 30
+  key: some_signature_key # Must be string 
+  name: some_cookie_name
+preauthorized:
+  emails:
+  - nathanyaqueby@yahoo.com
