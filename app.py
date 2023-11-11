@@ -262,7 +262,7 @@ if authentication_status:
             if feedback:
                 st.session_state['feedback'][feedback_key] = feedback
                 # Assuming 1 point for each feedback
-                update_user(username, 2, 1)
+                update_user(username, 2, 0)
                 # add a notification that the user has earned a point
                 st.sidebar.success(
                     f"You have earned a point!  Your points: {user_points}"
@@ -306,6 +306,9 @@ if authentication_status:
             st.session_state.prompt_ids.append(logged_prompt.id)
 
             message_placeholder.markdown(full_response)
+
+            # update sustainability score
+            update_user(username, 0, 1)
             # add title to the chart
             # st.markdown("### Sustainability score over time")
             # st.bar_chart(np.random.randn(30, 3))
