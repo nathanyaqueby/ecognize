@@ -99,9 +99,14 @@ if name is not None:
 
     # rewrite st info with html font family Garet
     st.markdown("""
-                <p style='font-family': 'Garet'>Welcome to <b>PROMPTERRA</b> by <b>ECOGNIZE</b> 🌍</p> <br>
-                <p style='font-family': 'Garet'>PROMPTERRA is a platform that trains users to use OpenAI's GPT in a more sustainable way. To get started, type a prompt in the chat box on the left and click enter. The AI will respond with a summary of your prompt. You can then provide feedback on the response to gain points!</p>
+                <p style='font-family': Garet'>Welcome to <b>PROMPTERRA</b> by <b>ECOGNIZE</b> 🌍</p> <br>
+                <p style='font-family': Garet'>PROMPTERRA is a platform that trains users to use OpenAI's GPT in a more sustainable way. To get started, type a prompt in the chat box on the left and click enter. The AI will respond with a summary of your prompt. You can then provide feedback on the response to gain points!</p>
                 """, unsafe_allow_html=True)
+    
+    st.markdown(""" <style> .font {
+    font-size:50px ; font-family: 'Cooper Black'; color: #FF9633;} 
+    </style> """, unsafe_allow_html=True)
+    st.markdown('<p class="font">Guess the object Names</p>', unsafe_allow_html=True)
 
     openai.api_key = st.secrets["openai_api_key"]
     feedback = None
