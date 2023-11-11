@@ -25,12 +25,13 @@ def search_bing(kwargs) -> list[str]:
     bing_search_key = os.getenv("BING_CUSTOMSEARCH_KEY", "")
     url = f"{bing_search_endpoint}/v7.0/custom/search"
     
-    if search_index == "DEFAULT":
-        url = f"{bing_search_endpoint}/v7.0/search"
-        bing_search_key = os.getenv("BING_SEARCH_KEY", "")
-        params = {"q": query, "count": N_RESULTS}
-    else:
-        return ["Invalid search_index parameter. Valid choices is 'DEFAULT'."]
+    match search_index:
+        case "DEFAULT":
+            url = f"{bing_search_endpoint}/v7.0/search"
+            bing_search_key = os.getenv("BING_SEARCH_KEY", "")
+            params = {"q": query, "count": N_RESULTS}
+        case _:
+            return ["Invalid search_index parameter. Valid choices is 'DEFAULT'."]
 
     headers = {"Ocp-Apim-Subscription-Key": bing_search_key}
     res = call_API("GET", url, headers=headers, params=params)

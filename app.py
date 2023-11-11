@@ -1,5 +1,6 @@
 import openai
 import streamlit as st
+import json
 from yaml.loader import SafeLoader
 import streamlit_authenticator as stauth
 from streamlit_feedback import streamlit_feedback
@@ -8,10 +9,27 @@ import numpy as np
 import pandas as pd
 from streamlit_extras.app_logo import add_logo
 from trubrics.integrations.streamlit import FeedbackCollector
+from search import search_bing
 import uuid
 from pymongo import MongoClient
 from bson import ObjectId
 
+TIMEOUT = 60
+
+RETRIEVAL_PROMPT = """
+You are a powerful AI chat assistant that can answer user questions by retrieving relevant information from various sources. If you call any functions, please follow strictly the function descriptions and infer the parameters from the predefined ones based on the message history until this point. Do not make up your own function call parameters that are not defined.
+"""
+
+GENERATION_PROMPT = """
+You are a powerful AI chat assistant that can answer user questions by retrieving relevant information from various sources. Be careful to answer the question using only the information from function calls. If they do not return any answers or the answers don't match the question, just say you cannot answer the question and stop there. 
+If you used one or several retrieved information sources in your answer, please cite the relevant sources at the end of your response, starting with the text "SOURCES: " (always in plural), followed by a JSON standard formatted structure, as in below sample: 
+SOURCES: {
+    "sources": [
+        "source/url 1", 
+        "source/url 2 etc"
+    ]
+}
+"""
 
 st.set_page_config(
     layout="wide",
@@ -131,6 +149,34 @@ def add_metrics(cola, colb, username):
             st.metric("Eco-friendly queries", f"{user_num_query} 🌿", f"Average", delta_color="off", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
 ############
 
+############ Function calling
+functions = [
+    {
+        "name": "search_bing",
+        "description": "Search for relevant hits from Bing.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": f"Query string to search the posts for, inferred from the user message and ALWAYS translated to ENGLISH before passing on to the function. Sample query styles: 'expected development of stainless steel market pricing in December 2022' or 'possible energy price developments over January-March 2023'. Note: today is {dt.datetime.utcfromtimestamp(UTC_TIMESTAMP).strftime('%Y-%m-%d')}."
+                },
+                "search_index": {
+                    "type": "string",
+                    "description": "Name of the Bing Search index to use. Valid choices: 'DEFAULT'. If 'DEFAULT' is used, the search will be performed on the entire web."
+                }
+            },
+            "required": ["query", "search_index"]
+        }
+    }
+]
+
+available_functions = {
+    "search_bing": search_bing,
+}
+
+st.title("PROMPTERRA")
+
 # put logo in the center
 col1, col2, col3 = st.columns([1, 6, 1])
 with col1:
@@ -164,6 +210,7 @@ if authentication_status:
     # user_points = load_user_points(username)
     st.sidebar.title(f"Hello, {name.split()[0]}!")
 
+
     # Initialize session state for metrics
     if 'metrics' not in st.session_state:
         st.session_state['metrics'] = load_all_from_mongo(username)
@@ -187,38 +234,37 @@ if authentication_status:
                 <p style='font-family': Garet'>PROMPTERRA is a platform that trains users to use OpenAI's GPT in a more sustainable way. To get started, type a prompt in the chat box on the left and click enter. The AI will respond with a summary of your prompt. You can then provide feedback on the response to gain points!</p>
                 """, unsafe_allow_html=True)
 
-    openai.api_key = st.secrets["openai_api_key"]
     feedback = None
 
-    # create a dropdown to select the model
-    st.sidebar.title("Model")
-    st.sidebar.markdown(
-        "Select the model you want to use. The turbo model is faster but less accurate."
-    )
-    # dropdown to select the model
-    st.session_state["openai_model"] = st.sidebar.selectbox(
-        "Model",
-        [
-            "gpt-3.5-turbo",
-            "gpt-4",
-            "gpt-4-1106-preview"
-        ],
-        label_visibility="collapsed",
-        index=1,
-    )
+    # # create a dropdown to select the model
+    # st.sidebar.title("Model")
+    # st.sidebar.markdown(
+    #     "Select the model you want to use. The turbo model is faster but less accurate."
+    # )
+    # # dropdown to select the model
+    # st.session_state["openai_model"] = st.sidebar.selectbox(
+    #     "Model",
+    #     [
+    #         "gpt-3.5-turbo",
+    #         "gpt-4",
+    #         "gpt-4-1106-preview"
+    #     ],
+    #     label_visibility="collapsed",
+    #     index=1,
+    # )
 
-    # add a notification that the user picks the most sustainable option for the model if they pick "gpt-3.5-turbo"
-    if st.session_state["openai_model"] == "gpt-4":
-        st.sidebar.warning(
-            "You have selected the largest, least sustainable model.  Please only use this model if you need an extensive answer."
-        )
+    # # add a notification that the user picks the most sustainable option for the model if they pick "gpt-3.5-turbo"
+    # if st.session_state["openai_model"] == "gpt-4":
+    #     st.sidebar.warning(
+    #         "You have selected the largest, least sustainable model.  Please only use this model if you need an extensive answer."
+    #     )
 
     # should be the end of the sidebar
     with st.sidebar:
         authenticator.logout("Logout", "main", key="unique_key")
 
     if "messages" not in st.session_state:
-        st.session_state.messages = []
+        st.session_state.messages = [{"role": "system", "content": RETRIEVAL_PROMPT}]
     if "prompt_ids" not in st.session_state:
         st.session_state["prompt_ids"] = []
     if "session_id" not in st.session_state:
@@ -246,7 +292,7 @@ if authentication_status:
                     component="default",
                     feedback_type="thumbs",
                     open_feedback_label="[Optional] Provide additional feedback",
-                    model=st.session_state["openai_model"],
+                    model="gpt-4",
                     key=feedback_key,
                     prompt_id=st.session_state.prompt_ids[int(n / 2) - 1],
                     user_id=st.secrets["TRUBRICS_EMAIL"]
@@ -260,7 +306,7 @@ if authentication_status:
                     component="default",
                     feedback_type="thumbs",
                     open_feedback_label="[Optional] Provide additional feedback",
-                    model=st.session_state["openai_model"],
+                    model="gpt-4",
                     key=feedback_key,
                     prompt_id=st.session_state.prompt_ids[n],
                     user_id=st.secrets["TRUBRICS_EMAIL"]
@@ -275,53 +321,146 @@ if authentication_status:
                     f"You have earned +2 points for giving feedback!"
                 )
 
-    if prompt := st.chat_input("What would you like to summarize?"):
-        # adjust prompt to add sources in a specified format
-        prompt2 = "Answer the following query and summarize it in 1-2 paragraphs:\n" + prompt + " Write the sources you used in the following format: - Source 1: [link] - Source 2: [link] - Source 3: [link]"
+    if prompt := st.chat_input("Ask me anything"):
 
-        # prompt2 = "Answer the following query and summarize it in 1-2 paragraphs:\n" + prompt
-        new_message_id = len(st.session_state['messages'])  # Unique ID for the new message
-        st.session_state['messages'].append({"role": "user", "content": prompt, "id": new_message_id})
+        # Add the user message to the session state and render it
+        st.session_state['messages'].append({"role": "user", "content": prompt})
 
         with st.chat_message("user"):
             st.markdown(prompt)
 
         with st.chat_message("assistant"):
             message_placeholder = st.empty()
-            full_response = ""
-            for response in openai.ChatCompletion.create(
-                model=st.session_state["openai_model"],
-                messages=[
-                    {"role": m["role"], "content": m["content"]}
-                    for m in st.session_state.messages
-                ],
-                temperature=0.2,
-                max_tokens=300,
+            # For streaming, we need to loop through the response generator
+            reply_text = ""
+            function_name = ""
+            function_args = ""
+            for chunk in openai.ChatCompletion.create(
+                model="gpt-35-turbo",
+                deployment_id="gpt-35-turbo",
+                messages=st.session_state['messages'],
+                max_tokens=200,
+                timeout=TIMEOUT,
+                function_call="auto",
+                functions=functions,
                 stream=True,
             ):
-                full_response += response.choices[0].delta.get("content", "")
-                message_placeholder.markdown(full_response + "▌")
+                delta = chunk["choices"][0].get("delta", {})
+                content = delta.get("content", None)
+                function_call = delta.get("function_call", None)
+                if function_call is not None:
+                    function_name += function_call.get("name", "")
+                    function_args += function_call.get("arguments", "")
+                if content is not None:
+                    reply_text += content
 
-            logged_prompt = collector.log_prompt(
-                config_model={"model": st.session_state["openai_model"]},
-                prompt=prompt,
-                generation=full_response,
-                session_id=st.session_state.session_id,
-                # tags="prompterra",
-                user_id=str(st.secrets["TRUBRICS_EMAIL"])
-                )
-            st.session_state.prompt_ids.append(logged_prompt.id)
+                    # Sanitize output
+                    if reply_text.startswith("AI: "):
+                        reply_text = reply_text.split("AI: ", 1)[1]
+                
+                # Continuously write the response in Streamlit
+                message_placeholder.markdown(reply_text)
 
-            message_placeholder.markdown(full_response)
+            # Collect full function call
+            if function_name != "" and function_args != "":
+                function_call = {"name": function_name, "arguments": function_args}
+            else:
+                function_call = None
 
-            # update sustainability score
-            update_user(username, 0, 1)
-            # add title to the chart
-            # st.markdown("### Sustainability score over time")
-            # st.bar_chart(np.random.randn(30, 3))
+            if function_call is None:  # Not a function call, return normal message
+                # Sanitize
+                if reply_text.startswith("AI: "):
+                    reply_text = reply_text.split("AI: ", 1)[1]
+
+                message_placeholder.markdown(reply_text)
+
+            # Model wants to call a function and call it, if appropriate
+            else:
+                # Read the function call from model response and execute it
+                fun_name = function_call.get("name", None)
+                if fun_name is not None and fun_name and fun_name in available_functions:
+                    function = available_functions[fun_name]
+                else:
+                    function = None
+                fun_args = function_call.get("arguments", None)
+                if fun_args is not None and isinstance(fun_args, str):
+                    fun_args = json.loads(fun_args)
+
+                query = fun_args.get("query", None)
+
+                # Check in the cache if the response is already there and if so just return the relevant answer
+                # NOT IMPLEMENTED YET - GO STRAIGHT TO RETRIEVAL AND NEW GENERATION
+
+                if function is None:
+                    fun_res = ["Error, no function specified"]
+                elif query is None:
+                    fun_res = ["Error, no query specified"]
+                else:
+                    with st.status(f"Called function `{fun_name}`"):
+                        st.json(fun_args, expanded=True)
+                        fun_res = function(fun_args)
+
+                # Build an abridged, temporary message to be fed into a more powerful GPT-4 model to limit the number of tokens
+
+                # Proceed to the secondary call to generate results
+                messages = [{"role": "system", "content": GENERATION_PROMPT}]
+                if query is not None:
+                    messages.append({"role": "user", "content": query})
+                messages.extend([{"role": "function", "name": fun_name, "content": one_fun_res} for one_fun_res in fun_res])
+
+                # For streaming, we need to loop through the response generator
+                reply_text = ""
+                for chunk in openai.ChatCompletion.create(
+                    model="gpt-4",
+                    deployment_id="gpt-4",
+                    messages=messages,
+                    max_tokens=1500,
+                    timeout=TIMEOUT,
+                    function_call=None,
+                    functions=None,
+                    stream=True,
+                ):
+                    delta = chunk["choices"][0].get("delta", {})
+                    content = delta.get("content", None)
+                    function_call = delta.get("function_call", None)
+                    if function_call is not None:
+                        function_name += function_call.get("name", "")
+                        function_args += function_call.get("arguments", "")
+                    if content is not None:
+                        reply_text += content
+
+                        # Sanitize output
+                        if reply_text.startswith("AI: "):
+                            reply_text = reply_text.split("AI: ", 1)[1]
+                    
+                    # Continuously write the response in Streamlit
+                    message_placeholder.markdown(reply_text)
+
+                # # Collect full function call
+                # if function_name != "" and function_args != "":
+                #     function_call = {"name": function_name, "arguments": function_args}
+                # else:
+                #     function_call = None
+                    
+                # Sanitize
+                if reply_text.startswith("AI: "):
+                    reply_text = reply_text.split("AI: ", 1)[1]
+
+                message_placeholder.markdown(reply_text)
+
+                logged_prompt = collector.log_prompt(
+                    config_model={"model": "gpt-4"},
+                    prompt=prompt,
+                    generation=reply_text,
+                    session_id=st.session_state.session_id,
+                    # tags=tags,
+                    user_id=str(st.secrets["TRUBRICS_EMAIL"])
+                    )
+                
+                st.session_state.prompt_ids.append(logged_prompt.id)
 
         # After getting the response, add it to the session state
-        st.session_state['messages'].append({"role": "assistant", "content": full_response, "id": new_message_id + 1})
+        st.session_state['messages'].append({"role": "assistant", "content": reply_text})
 
 elif st.session_state["authentication_status"] is False:
     st.error("Username/password is incorrect")
