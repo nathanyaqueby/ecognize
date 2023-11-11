@@ -23,6 +23,9 @@ st.set_page_config(
     },
 )
 
+with open("style.css", "r") as css:
+    st.markdown(f"<style>{css.read()}</style>", unsafe_allow_html=True)
+
 add_logo("ecognize logo.png", height=100)
 
 ############ functions
