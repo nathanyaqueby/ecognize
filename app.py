@@ -254,7 +254,7 @@ if authentication_status:
                 prompt=prompt,
                 generation=full_response,
                 session_id=st.session_state.session_id,
-                tags="prompterra",
+                # tags="prompterra",
                 user_id=str(st.secrets["TRUBRICS_EMAIL"])
                 )
             st.session_state.prompt_ids.append(logged_prompt.id)
