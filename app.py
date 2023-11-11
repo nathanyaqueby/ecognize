@@ -149,25 +149,22 @@ if name is not None:
     }
 
     # Assign IDs to existing messages if they don't have one
-    for i, message in enumerate(st.session_state.get('messages', [])):
-        if 'id' not in message:
-            message['id'] = i
+    for n, msg in enumerate(st.session_state["messages"]):
+        st.chat_message(msg["role"]).write(msg["content"])
 
-    # for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+        if msg["role"] == "assistant" and n > 1:
+            feedback_key = f"feedback_{int(n / 2)}"
 
-        st.write(message)
-
-        # Check if feedback should be displayed for this message
-        message_id = f"feedback_{message['id']}"
-        if message['role'] == 'assistant' and message_id not in st.session_state['feedback']:
+            if feedback_key not in st.session_state:
+                st.session_state[feedback_key] = None
             feedback = collector.st_feedback(
                 component="default",
                 feedback_type="thumbs",
+                open_feedback_label="[Optional] Provide additional feedback",
                 model=st.session_state["openai_model"],
-                prompt_id=None,  # see prompts to log prompts and model generations
-                open_feedback_label='[Optional] Provide additional feedback'
+                key=feedback_key,
+                prompt_id=st.session_state.prompt_ids[int(n / 2) - 1],
+                user_id=st.secrets["TRUBRICS_EMAIL"]
             )
 
             if feedback:
