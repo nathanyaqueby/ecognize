@@ -30,15 +30,15 @@ with st.spinner(text="In progress..."):
     )
 
     name, authentication_status, username = authenticator.login("Login", "main")
-    st.write(name, authentication_status, username)
+    # st.write(name, authentication_status, username)
 
-print(authentication_status)
+# print(authentication_status)
 
 # write a welcome message after the user logs in
 if name is not None:
     st.info(
         f"""
-        Welcome to ECOGNIZE, {name.split[0]}! 🌍
+        Welcome to ECOGNIZE, {name.split()[0]}! 🌍
 
         ECOGNIZE is a prototype that uses OpenAI's GPT-3 to answer questions about sustainability.  It is a prototype for the Junction 2021 hackathon.
         To get started, type a question in the chat box.  The AI assistant will answer your question and provide a summary of the answer.
