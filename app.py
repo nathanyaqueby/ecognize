@@ -9,6 +9,8 @@ import pandas as pd
 from streamlit_extras.app_logo import add_logo
 from trubrics.integrations.streamlit import FeedbackCollector
 import uuid
+from pymongo import MongoClient
+from bson import ObjectId
 
 
 st.set_page_config(
@@ -62,6 +64,38 @@ def update_user_points(username, points):
     new_points = user_points_pd[user_points_pd['username'] == username]['user_points'].values[0]
     st.session_state.setdefault('user_points', {})[username] = new_points
     return new_points
+
+# Replace the following with your own connection string
+MONGO_URI = st.secrets["MONGO_URI"]
+# Connect to the MongoDB Atlas cluster
+client = MongoClient(MONGO_URI)
+
+# Select your database
+db = client["junction"]
+
+# Select your collection
+collection = db["sustainability_scores"]
+
+def update_user(username, user_point, sustainability_score):
+    """ Update the user's points and sustainability score based on username """
+    user_document = collection.find_one({"username": username})
+    if user_document:
+        result = collection.update_one(
+            {"_id": user_document["_id"]},
+            {"$set": {"user_point": user_point, "sustainability_score": sustainability_score}}
+        )
+        if result.matched_count > 0:
+            print(f"User {username} updated. Points: {user_point}, Sustainability Score: {sustainability_score}")
+        else:
+            print(f"Update operation did not find the user {username}")
+    else:
+        print(f"No user found with the username {username}")
+
+def load_from_mongo(username):
+    """ Fetch a single document based on username """
+    query = {"username": username}
+    document = collection.find_one(query)
+    return document
 ############
 
 # put logo in the center
@@ -94,16 +128,28 @@ with st.spinner(text="In progress..."):
 
 # write a welcome message after the user logs in
 if authentication_status:
-    user_points = load_user_points(username)
+    # user_points = load_user_points(username)
     st.sidebar.title(f"Hello, {name.split()[0]}!")
 
     # compute the average points of all users
-    user_points_pd = pd.read_csv("user_points.csv")
-    average_points = user_points_pd["user_points"].mean()
+    user_pd = load_from_mongo(username)
+    user_points = user_pd["user_point"]
+    user_num_query = user_pd["sustainability_score"]
+
+    # load all users nqueby, tianyi, cmakafui, angelineov, outokumpu from mongo
+    users = ["nqueby", "tianyi", "cmakafui", "angelineov", "outokumpu"]
+    sustainability_scores = []
+    user_points = 0
+
+    for user in users:
+        user_document = load_from_mongo(user)
+        sustainability_scores.append(user_document["sustainability_score"])
+        user_points += user_document["user_point"]
+
+    average_points = user_points / len(users)
 
     # get the user's number of query from the database
-    user_num_query = user_points_pd[user_points_pd["username"] == username]["num_query"].values[0]
-    average_query = user_points_pd["num_query"].mean()
+    average_query = np.mean(sustainability_scores)
 
     # create two cols
     col41, col42 = st.sidebar.columns(2)
@@ -168,15 +214,14 @@ if authentication_status:
     # show a ranking of the user points
     st.sidebar.title("Leaderboard")
     # load the csv file with the user points
-    user_points_pd = pd.read_csv("user_points.csv")
     # sort the users by points
-    user_points_pd = user_points_pd.sort_values(by=["user_points"], ascending=False)
-    if len(user_points_pd) >= 5:
+    user_pd = user_pd.sort_values(by=["user_points"], ascending=False)
+    if len(user_pd) >= 5:
         # Create a new DataFrame for top 5 users
         top_users_data = {
             "Rank": ["🥇", "🥈", "🥉", "🏅", "🏅"],
-            "Username": [user_points_pd.iloc[i]['username'] for i in range(5)],
-            "Points": [user_points_pd.iloc[i]['user_points'] for i in range(5)]
+            "Username": [user_pd.iloc[i]['username'] for i in range(5)],
+            "Points": [user_pd.iloc[i]['user_points'] for i in range(5)]
         }
 
         top_users_df = pd.DataFrame(top_users_data)
@@ -238,7 +283,7 @@ if authentication_status:
             if feedback:
                 st.session_state['feedback'][feedback_key] = feedback
                 # Assuming 1 point for each feedback
-                user_points = update_user_points(username, 2)
+                update_user_points(username, 2)
                 # add a notification that the user has earned a point
                 st.sidebar.success(
                     f"You have earned a point!  Your points: {user_points}"

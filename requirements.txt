@@ -4,5 +4,6 @@ streamlit-authenticator
 streamlit-feedback
 streamlit-extras
 trubrics
+pymongo
 numpy
 sumy
