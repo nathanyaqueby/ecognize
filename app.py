@@ -95,7 +95,19 @@ with st.spinner(text="In progress..."):
 # write a welcome message after the user logs in
 if authentication_status:
     user_points = load_user_points(username)
-    st.sidebar.write(f"Hello, {name.split()[0]}!\nYour points: {user_points}")
+    st.sidebar.title(f"Hello, {name.split()[0]}!")
+
+    # compute the average points of all users
+    user_points_pd = pd.read_csv("user_points.csv")
+    average_points = user_points_pd["user_points"].mean()
+
+    # add a st.metric to show how much the user's points are above or less than the average in percentage
+    if user_points > average_points:
+        st.sidebar.metric("Your points", f"{user_points}", f"{round((user_points - average_points) / average_points * 100, 2)} %")
+    elif user_points < average_points:
+        st.sidebar.metric("Your points", f"{user_points}", f"-{round((user_points - average_points) / average_points * 100, 2)} %")
+    else:
+        st.sidebar.metric("Your points", f"{user_points}", f"Average", delta_color="off")
 
     # st.sidebar.markdown(f"""
     #                     <p style='font-family': Garet'>Hello, {name.split()[0]}! <p> <br>
@@ -204,7 +216,7 @@ if authentication_status:
             if feedback:
                 st.session_state['feedback'][feedback_key] = feedback
                 # Assuming 1 point for each feedback
-                user_points = update_user_points(username, 1)
+                user_points = update_user_points(username, 2)
                 # add a notification that the user has earned a point
                 st.sidebar.success(
                     f"You have earned a point!  Your points: {user_points}"
