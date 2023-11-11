@@ -157,20 +157,35 @@ if name is not None:
     for n, msg in enumerate(st.session_state["messages"]):
         st.chat_message(msg["role"]).write(msg["content"])
 
-        if msg["role"] == "assistant" and n > 1:
-            feedback_key = f"feedback_{int(n / 2)}"
+        if msg["role"] == "assistant":
+            if n > 0:
+                feedback_key = f"feedback_{int(n / 2)}"
 
-            if feedback_key not in st.session_state:
-                st.session_state[feedback_key] = None
-            feedback = collector.st_feedback(
-                component="default",
-                feedback_type="thumbs",
-                open_feedback_label="[Optional] Provide additional feedback",
-                model=st.session_state["openai_model"],
-                key=feedback_key,
-                prompt_id=st.session_state.prompt_ids[int(n / 2) - 1],
-                user_id=st.secrets["TRUBRICS_EMAIL"]
-            )
+                if feedback_key not in st.session_state:
+                    st.session_state[feedback_key] = None
+                feedback = collector.st_feedback(
+                    component="default",
+                    feedback_type="thumbs",
+                    open_feedback_label="[Optional] Provide additional feedback",
+                    model=st.session_state["openai_model"],
+                    key=feedback_key,
+                    prompt_id=st.session_state.prompt_ids[int(n / 2) - 1],
+                    user_id=st.secrets["TRUBRICS_EMAIL"]
+                )
+            else:
+                feedback_key = f"feedback_{n}"
+
+                if feedback_key not in st.session_state:
+                    st.session_state[feedback_key] = None
+                feedback = collector.st_feedback(
+                    component="default",
+                    feedback_type="thumbs",
+                    open_feedback_label="[Optional] Provide additional feedback",
+                    model=st.session_state["openai_model"],
+                    key=feedback_key,
+                    prompt_id=st.session_state.prompt_ids[n],
+                    user_id=st.secrets["TRUBRICS_EMAIL"]
+                )
 
             if feedback:
                 st.session_state['feedback'][feedback_key] = feedback
