@@ -298,8 +298,8 @@ if authentication_status:
     # Initialize session state for the checklist
     if 'checklist' not in st.session_state:
         st.session_state['checklist'] = {
-            "uses_renewable_energy": False,
-            "uses_smallest_model": False,
+            "uses_renewable_energy": True,
+            # "uses_smallest_model": False,
             "length_under_500": False,
             "no_ambiguous_words": False,
             "no_need_for_clarification": False
