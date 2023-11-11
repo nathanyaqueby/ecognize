@@ -75,6 +75,51 @@ def load_from_mongo(username):
     query = {"username": username}
     document = collection.find_one(query)
     return document
+
+def load_all_from_mongo(username):
+    # compute the average points of all users
+    user_pd = load_from_mongo(username)
+    user_points = user_pd["user_point"]
+    user_num_query = user_pd["sustainability_score"]
+
+    # load all users nqueby, tianyi, cmakafui, angelineov, outokumpu from mongo
+    users = ["nqueby", "tianyi", "cmakafui", "angelineov", "outokumpu"]
+    sustainability_scores = []
+    user_points = 0
+
+    for user in users:
+        user_document = load_from_mongo(user)
+        sustainability_scores.append(user_document["sustainability_score"])
+        user_points += user_document["user_point"]
+
+    average_points = user_points / len(users)
+
+    # get the user's number of query from the database
+    average_query = np.mean(sustainability_scores)
+
+    return average_points, average_query, user_points, user_num_query
+
+def add_metrics(cola, colb, username):
+
+    average_points, average_query, user_points, user_num_query = load_all_from_mongo(username)
+
+    with cola:
+        # add a st.metric to show how much the user's points are above or less than the average in percentage
+        if user_points > average_points:
+            st.metric("Your points", f"{user_points} 🌍", f"{round((user_points - average_points) / average_points * 100)} %", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
+        elif user_points < average_points:
+            st.metric("Your points", f"{user_points} 🌍", f"-{round((user_points - average_points) / average_points * 100)} %", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
+        else:
+            st.metric("Your points", f"{user_points} 🌍", f"Average", delta_color="off", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
+    
+    with colb:
+        # add a st.metric to show the user's number of query
+        if user_num_query > average_query:
+            st.metric("Eco-friendly queries", f"{user_num_query} 🌿", f"{round((user_num_query - average_query) / average_query * 100)} %", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
+        elif user_num_query < average_query:
+            st.metric("Eco-friendly queries", f"{user_num_query} 🌿", f"{round((user_num_query - average_query) / average_query * 100)} %", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
+        else:
+            st.metric("Eco-friendly queries", f"{user_num_query} 🌿", f"Average", delta_color="off", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
 ############
 
 # put logo in the center
@@ -110,47 +155,9 @@ if authentication_status:
     # user_points = load_user_points(username)
     st.sidebar.title(f"Hello, {name.split()[0]}!")
 
-    # compute the average points of all users
-    user_pd = load_from_mongo(username)
-    user_points = user_pd["user_point"]
-    user_num_query = user_pd["sustainability_score"]
-
-    # load all users nqueby, tianyi, cmakafui, angelineov, outokumpu from mongo
-    users = ["nqueby", "tianyi", "cmakafui", "angelineov", "outokumpu"]
-    sustainability_scores = []
-    user_points = 0
-
-    for user in users:
-        user_document = load_from_mongo(user)
-        sustainability_scores.append(user_document["sustainability_score"])
-        user_points += user_document["user_point"]
-
-    average_points = user_points / len(users)
-
-    # get the user's number of query from the database
-    average_query = np.mean(sustainability_scores)
-
     # create two cols
     col41, col42 = st.sidebar.columns(2)
-
-    with col41:
-        # add a st.metric to show how much the user's points are above or less than the average in percentage
-        if user_points > average_points:
-            st.metric("Your points", f"{user_points} 🌍", f"{round((user_points - average_points) / average_points * 100)} %", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
-        elif user_points < average_points:
-            st.metric("Your points", f"{user_points} 🌍", f"-{round((user_points - average_points) / average_points * 100)} %", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
-        else:
-            st.metric("Your points", f"{user_points} 🌍", f"Average", delta_color="off", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
-    
-    with col42:
-        # add a st.metric to show the user's number of query
-        if user_num_query > average_query:
-            st.metric("Eco-friendly queries", f"{user_num_query} 🌿", f"{round((user_num_query - average_query) / average_query * 100)} %", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
-        elif user_num_query < average_query:
-            st.metric("Eco-friendly queries", f"{user_num_query} 🌿", f"{round((user_num_query - average_query) / average_query * 100)} %", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
-        else:
-            st.metric("Eco-friendly queries", f"{user_num_query} 🌿", f"Average", delta_color="off", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
-
+    add_metrics(col41, col42, username)
 
     # st.sidebar.markdown(f"""
     #                     <p style='font-family': Garet'>Hello, {name.split()[0]}! <p> <br>
@@ -190,25 +197,17 @@ if authentication_status:
             "You have selected the largest, least sustainable model.  Please only use this model if you need an extensive answer."
         )
 
-    # show a ranking of the user points
-    # st.sidebar.title("Leaderboard")
-    # load the csv file with the user points
-    # sort the users by points
-    # user_pd = user_pd.sort_values(by=["user_points"], ascending=False)
-    # if len(user_pd) >= 5:
-    #     # Create a new DataFrame for top 5 users
-    #     top_users_data = {
-    #         "Rank": ["🥇", "🥈", "🥉", "🏅", "🏅"],
-    #         "Username": [user_pd.iloc[i]['username'] for i in range(5)],
-    #         "Points": [user_pd.iloc[i]['user_points'] for i in range(5)]
-    #     }
-
-        # top_users_df = pd.DataFrame(top_users_data)
-        # st.sidebar.dataframe(top_users_df, hide_index=True, use_container_width=True)
-
     # should be the end of the sidebar
     with st.sidebar:
-        authenticator.logout("Logout", "main", key="unique_key")
+
+        # create two cols
+        col51, col52 = st.columns(2)
+
+        with col51:
+            authenticator.logout("Logout", "main", key="unique_key")
+        with col52:
+            # add refresh button
+            st.button("Refresh", on_click=add_metrics(col41, col42, username))
 
     if "messages" not in st.session_state:
         st.session_state.messages = []
@@ -265,7 +264,7 @@ if authentication_status:
                 update_user(username, 2, 0)
                 # add a notification that the user has earned a point
                 st.sidebar.success(
-                    f"You have earned a point!  Your points: {user_points}"
+                    f"You have earned +2 points for giving feedback!"
                 )
 
     if prompt := st.chat_input("What would you like to summarize?"):
