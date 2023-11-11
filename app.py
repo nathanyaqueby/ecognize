@@ -18,6 +18,12 @@ st.set_page_config(
     },
 )
 
+############ functions
+def _submit_feedback(user_response, emoji=None):
+    st.toast(f"Feedback submitted: {user_response}", icon=emoji)
+    return user_response.update({"some metadata": 123})
+############
+
 st.title("ECOGNIZE prototype")
 
 with open("config.yaml") as file:
@@ -75,10 +81,32 @@ if name is not None:
 
     if "messages" not in st.session_state:
         st.session_state.messages = []
+    if "feedback_key" not in st.session_state:
+        st.session_state.feedback_key = 0
+
+    feedback_kwargs = {
+        "feedback_type": "thumbs",
+        "optional_text_label": "Please provide extra information",
+        "on_submit": _submit_feedback,
+    }
 
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
+    
+    for n, msg in enumerate(st.session_state.messages):
+        # st.chat_message(msg["role"]).write(msg["content"])
+
+        if msg["role"] == "assistant" and n > 1:
+            feedback_key = f"feedback_{int(n/2)}"
+
+            if feedback_key not in st.session_state:
+                st.session_state[feedback_key] = 0
+
+            streamlit_feedback(
+                **feedback_kwargs,
+                key=feedback_key,
+            )
 
     if prompt := st.chat_input("What would you like to summarize?"):
         # adjust prompt to create a summary of what the user wants to know about
@@ -110,4 +138,5 @@ if name is not None:
             st.bar_chart(np.random.randn(30, 3))
         st.session_state.messages.append({"role": "assistant", "content": full_response})
 
-    st.write(feedback)
+    if feedback:
+        st.write(feedback)
