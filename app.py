@@ -5,6 +5,7 @@ import streamlit_authenticator as stauth
 from streamlit_feedback import streamlit_feedback
 import yaml
 import numpy as np
+import pandas as pd
 
 st.set_page_config(
     layout="wide",
@@ -22,6 +23,25 @@ st.set_page_config(
 def _submit_feedback(user_response, emoji=None):
     st.toast(f"Feedback submitted: {user_response}", icon=emoji)
     return user_response.update({"some metadata": 123})
+
+def load_user_points(username):
+    # load the csv file with the user points
+    user_points = pd.read_csv("user_points.csv")
+    # get the points for the user
+    points = user_points[user_points["username"] == username]["user_points"]
+    return points
+
+def update_user_points(username, points):
+    # Placeholder for updating points in a file or database
+    # Replace this with actual code to store points in a persistent storage
+    current_points = st.session_state.get('user_points', {}).get(username, 0)
+    new_points = current_points + points
+    st.session_state.setdefault('user_points', {})[username] = new_points
+    # update the csv file with the user points
+    user_points = pd.read_csv("user_points.csv")
+    user_points[user_points["username"] == username]["user_points"] = new_points
+    user_points.to_csv("user_points.csv", index=False)
+    return new_points
 ############
 
 st.title("ECOGNIZE prototype")
@@ -44,9 +64,12 @@ with st.spinner(text="In progress..."):
 
 # write a welcome message after the user logs in
 if name is not None:
+    user_points = load_user_points(username)
+    st.sidebar.write(f"Hello, {name.split()[0]}! Your points: {user_points}")
+
     st.info(
         f"""
-        Welcome to ECOGNIZE, {name.split()[0]}! 🌍
+        Welcome to **ECOGNIZE** 🌍
 
         ECOGNIZE is a prototype that uses OpenAI's GPT to answer questions about sustainability.  It is a prototype for the Junction 2023 hackathon.
         To get started, type a question in the chat box.  The AI assistant will answer your question and provide a summary of the answer.
@@ -109,6 +132,12 @@ if name is not None:
             )
             if feedback:
                 st.session_state['feedback'][message_id] = feedback
+                # Assuming 1 point for each feedback
+                user_points = update_user_points(username, 1)
+                # add a notification that the user has earned a point
+                st.sidebar.success(
+                    f"You have earned a point!  Your points: {user_points}"
+                )
 
     if prompt := st.chat_input("What would you like to summarize?"):
         # adjust prompt to create a summary of what the user wants to know about
@@ -136,20 +165,9 @@ if name is not None:
                 full_response += response.choices[0].delta.get("content", "")
                 message_placeholder.markdown(full_response + "▌")
             message_placeholder.markdown(full_response)
-            # feedback = streamlit_feedback(feedback_type="thumbs")
             # add title to the chart
             st.markdown("### Sustainability score over time")
             st.bar_chart(np.random.randn(30, 3))
-
-            # Render feedback widget
-            # feedback = streamlit_feedback(
-            #     **feedback_kwargs,
-            #     key=f"feedback_{len(st.session_state.messages)}",
-            # )
-
-            # # Update the feedback state
-            # if feedback:
-            #     st.session_state[f"feedback_{len(st.session_state.messages)}"] = feedback
 
         # After getting the response, add it to the session state
         st.session_state['messages'].append({"role": "assistant", "content": full_response, "id": new_message_id + 1})
