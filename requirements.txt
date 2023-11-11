@@ -9,3 +9,4 @@ tenacity
 loguru
 numpy
 sumy
+langchain
