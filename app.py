@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 from streamlit_extras.app_logo import add_logo
 from trubrics.integrations.streamlit import FeedbackCollector
+import uuid
 
 
 st.set_page_config(
