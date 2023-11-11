@@ -91,6 +91,11 @@ if name is not None:
         "on_submit": _submit_feedback,
     }
 
+    # Assign IDs to existing messages if they don't have one
+    for i, message in enumerate(st.session_state.get('messages', [])):
+        if 'id' not in message:
+            message['id'] = i
+
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
