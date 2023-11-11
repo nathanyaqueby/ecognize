@@ -132,7 +132,7 @@ if name is not None:
         }
 
         top_users_df = pd.DataFrame(top_users_data)
-        st.sidebar.table(top_users_df)
+        st.sidebar.dataframe(top_users_df, hide_index=True)
 
     if "messages" not in st.session_state:
         st.session_state.messages = []
