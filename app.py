@@ -55,6 +55,7 @@ if name is not None:
     )
 
     openai.api_key = st.secrets["openai_api_key"]
+    feedback = None
 
     # create a dropdown to select the model
     st.sidebar.title("Model")
