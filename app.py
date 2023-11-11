@@ -86,9 +86,6 @@ if name is not None:
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
-            # add title to the chart
-            st.markdown("### Sustainability score over time")
-            st.bar_chart(np.random.randn(30, 3))
 
         with st.chat_message("assistant"):
             message_placeholder = st.empty()
@@ -105,4 +102,7 @@ if name is not None:
                 full_response += response.choices[0].delta.get("content", "")
                 message_placeholder.markdown(full_response + "▌")
             message_placeholder.markdown(full_response)
+            # add title to the chart
+            message_placeholder.markdown("### Sustainability score over time")
+            message_placeholder.bar_chart(np.random.randn(30, 3))
         st.session_state.messages.append({"role": "assistant", "content": full_response})
