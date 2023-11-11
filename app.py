@@ -107,10 +107,10 @@ if name is not None:
     user_points_pd = user_points_pd.sort_values(by=["user_points"], ascending=False)
     if len(user_points_pd) >= 5:
         top_users = f"""
-        🥇 {user_points_pd.iloc[0]['username']}: {user_points_pd.iloc[0]['user_points']}
-        🥈 {user_points_pd.iloc[1]['username']}: {user_points_pd.iloc[1]['user_points']}
-        🥉 {user_points_pd.iloc[2]['username']}: {user_points_pd.iloc[2]['user_points']}
-        🏅 {user_points_pd.iloc[3]['username']}: {user_points_pd.iloc[3]['user_points']}
+        🥇 {user_points_pd.iloc[0]['username']}: {user_points_pd.iloc[0]['user_points']} \n
+        🥈 {user_points_pd.iloc[1]['username']}: {user_points_pd.iloc[1]['user_points']} \n
+        🥉 {user_points_pd.iloc[2]['username']}: {user_points_pd.iloc[2]['user_points']} \n
+        🏅 {user_points_pd.iloc[3]['username']}: {user_points_pd.iloc[3]['user_points']} \n
         🏅 {user_points_pd.iloc[4]['username']}: {user_points_pd.iloc[4]['user_points']}
         """
         st.sidebar.markdown(top_users)
