@@ -64,8 +64,14 @@ def update_user_points(username, points):
     return new_points
 ############
 
-# add title "PROMPTERRA" as h1
-st.markdown("<h1 style='text-align: center;'>PROMPTERRA</h1>", unsafe_allow_html=True)
+# put logo in the center
+col1, col2, col3 = st.columns([1, 6, 1])
+with col1:
+    st.write("")
+with col2:
+    st.image("ecognize logo.png", width=200)
+with col3:
+    st.write("")
 
 collector = FeedbackCollector(
     project="ecognize",
