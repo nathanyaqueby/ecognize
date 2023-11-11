@@ -230,6 +230,7 @@ if authentication_status:
                     {"role": m["role"], "content": m["content"]}
                     for m in st.session_state.messages
                 ],
+                temperature=0.2,
                 max_tokens=300,
                 stream=True,
             ):
