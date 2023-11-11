@@ -64,7 +64,8 @@ def update_user_points(username, points):
     return new_points
 ############
 
-st.title("PROMPTERRA")
+# add title "PROMPTERRA" as h1
+st.markdown("<h1 style='text-align: center; color: #2a9d8f;'>PROMPTERRA</h1>", unsafe_allow_html=True)
 
 collector = FeedbackCollector(
     project="ecognize",

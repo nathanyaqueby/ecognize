@@ -17,5 +17,13 @@ html, body, [class*="css"] {
     font-family: "GaretBold";
     font-style: bold;
     font-weight: 300;
+    color: #009EE7;
     src: url("fonts/Garet-Heavy.ttf") format("truetype");
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'GaretBold', sans-serif;
+    font-style: bold;
+    font-weight: 300;
+    color: #009EE7;
 }
