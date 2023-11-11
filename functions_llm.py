@@ -128,10 +128,9 @@ available_functions = {
     if function_call is not None:
 
         # Read the function call from model response and execute it (if appropriate)
-        available_funs = functions["available_funs"]
         fun_name = function_call.get("name", None)
-        if fun_name is not None and fun_name and fun_name in available_funs:
-            function = available_funs[fun_name]
+        if fun_name is not None and fun_name and fun_name in available_functions:
+            function = available_functions[fun_name]
         else:
             function = None
         fun_args = function_call.get("arguments", None)
