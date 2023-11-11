@@ -44,27 +44,6 @@ def load_user_points(username):
     points = user_points_pd[user_points_pd["username"] == username]["user_points"].values[0]
     return points
 
-def update_user_points(username, points):
-    # Load the current points from the CSV
-    user_points_pd = pd.read_csv("user_points.csv")
-
-    # Check if the user exists in the DataFrame
-    if username in user_points_pd['username'].values:
-        # Update the user's points
-        user_points_pd.loc[user_points_pd['username'] == username, 'user_points'] += points
-    else:
-        # Add new user to the DataFrame
-        new_row = {'username': username, 'user_points': points}
-        user_points_pd = user_points_pd.append(new_row, ignore_index=True)
-
-    # Save updated DataFrame to CSV
-    user_points_pd.to_csv("user_points.csv", index=False)
-
-    # Update session state
-    new_points = user_points_pd[user_points_pd['username'] == username]['user_points'].values[0]
-    st.session_state.setdefault('user_points', {})[username] = new_points
-    return new_points
-
 # Replace the following with your own connection string
 MONGO_URI = st.secrets["MONGO_URI"]
 # Connect to the MongoDB Atlas cluster
@@ -283,7 +262,7 @@ if authentication_status:
             if feedback:
                 st.session_state['feedback'][feedback_key] = feedback
                 # Assuming 1 point for each feedback
-                update_user_points(username, 2)
+                update_user(username, 2, 1)
                 # add a notification that the user has earned a point
                 st.sidebar.success(
                     f"You have earned a point!  Your points: {user_points}"
