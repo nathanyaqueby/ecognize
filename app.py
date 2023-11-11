@@ -175,6 +175,29 @@ def add_metrics(cola, colb, username):
             st.metric("Eco-friendly queries", f"{user_num_query} 🌿", f"{round((user_num_query - average_query) / average_query * 100)} %", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
         else:
             st.metric("Eco-friendly queries", f"{user_num_query} 🌿", f"Average", delta_color="off", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
+
+# Function to evaluate the prompt
+def evaluate_prompt(prompt):
+    criteria = {
+        "uses_renewable_energy": False,  # Example: determine based on user's location or choice
+        "uses_smallest_model": st.session_state["openai_model"] == "gpt-3.5-turbo",
+        "length_under_500": len(prompt) < 500,
+        "no_ambiguous_words": False,  # Example: implement logic to check for ambiguous words
+        "no_need_for_clarification": False  # Example: implement logic to determine this
+    }
+    # Logic to update other criteria goes here
+    return criteria
+
+# Update the checklist based on the prompt
+def update_checklist(prompt):
+    st.session_state['checklist'] = evaluate_prompt(prompt)
+
+# Display the checklist in the sidebar
+def display_checklist():
+    st.sidebar.title("Eco prompt checklist:")
+    for criteria, is_met in st.session_state['checklist'].items():
+        icon = "✅" if is_met else "❌"
+        st.sidebar.write(f"{icon} {criteria.replace('_', ' ').capitalize()}")
 ############
 
 ############ Function calling
@@ -263,29 +286,6 @@ if authentication_status:
 
     feedback = None
 
-    # # create a dropdown to select the model
-    # st.sidebar.title("Model")
-    # st.sidebar.markdown(
-    #     "Select the model you want to use. The turbo model is faster but less accurate."
-    # )
-    # # dropdown to select the model
-    # st.session_state["openai_model"] = st.sidebar.selectbox(
-    #     "Model",
-    #     [
-    #         "gpt-3.5-turbo",
-    #         "gpt-4",
-    #         "gpt-4-1106-preview"
-    #     ],
-    #     label_visibility="collapsed",
-    #     index=1,
-    # )
-
-    # # add a notification that the user picks the most sustainable option for the model if they pick "gpt-3.5-turbo"
-    # if st.session_state["openai_model"] == "gpt-4":
-    #     st.sidebar.warning(
-    #         "You have selected the largest, least sustainable model.  Please only use this model if you need an extensive answer."
-    #     )
-
     # should be the end of the sidebar
     with st.sidebar:
         authenticator.logout("Logout", "main", key="unique_key")
@@ -298,6 +298,15 @@ if authentication_status:
         st.session_state.feedback = {}
     if "cache" not in st.session_state:
         st.session_state.cache = initialize_cache()
+    # Initialize session state for the checklist
+    if 'checklist' not in st.session_state:
+        st.session_state['checklist'] = {
+            "uses_renewable_energy": False,
+            "uses_smallest_model": False,
+            "length_under_500": False,
+            "no_ambiguous_words": False,
+            "no_need_for_clarification": False
+        }
 
     feedback_kwargs = {
         "feedback_type": "thumbs",
@@ -381,6 +390,8 @@ if authentication_status:
                 st.sidebar.success(
                     f"You have earned +2 points for giving feedback!"
                 )
+
+    display_checklist()
     
     # Save cache locally to CSV (if it has a length > 0)
     if "cache" in st.session_state and len(st.session_state.cache) > 0:
@@ -396,6 +407,9 @@ if authentication_status:
 
         with st.chat_message("user"):
             st.markdown(prompt)
+
+        update_checklist(prompt)
+        display_checklist()
 
         with st.chat_message("assistant"):
             # For streaming, we need to loop through the response generator
