@@ -18,6 +18,7 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 UTC_TIMESTAMP = int(dt.datetime.utcnow().timestamp())
 from pymongo import MongoClient
 from bson import ObjectId
+import re
 
 TIMEOUT = 60
 CACHE_SIMILARITY_THRESHOLD = 0.92   # Found by experimentation
@@ -101,14 +102,6 @@ def update_user(username, user_point, sustainability_score):
     else:
         print(f"No user found with the username {username}")
 
-    # Save updated DataFrame to CSV
-    user_points_pd.to_csv("user_points.csv", index=False)
-
-    # Update session state
-    new_points = user_points_pd[user_points_pd['username'] == username]['user_points'].values[0]
-    st.session_state.setdefault('user_points', {})[username] = new_points
-    return new_points
-
 def initialize_cache():
     # LOCAL VERSION: load "cache.csv" file into pandas DataFrame if it exists, otherwise create a new one
     if Path("cache.csv").is_file():
@@ -176,14 +169,22 @@ def add_metrics(cola, colb, username):
         else:
             st.metric("Eco-friendly queries", f"{user_num_query} 🌿", f"Average", delta_color="off", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
 
+# List of ambiguous words (this is just an example, you should expand this list)
+ambiguous_words = set(["thing", "stuff", "various", "many", "often", "frequently"])
+
+# Function to evaluate if a prompt contains ambiguous words
+def has_ambiguous_words(prompt):
+    words = set(re.findall(r'\b\w+\b', prompt.lower()))
+    return any(word in ambiguous_words for word in words)
+
 # Function to evaluate the prompt
 def evaluate_prompt(prompt):
     criteria = {
-        "uses_renewable_energy": False,  # Example: determine based on user's location or choice
-        "uses_smallest_model": st.session_state["openai_model"] == "gpt-3.5-turbo",
+        "uses_renewable_energy": True,  # Example: determine based on user's location or choice
+        # "uses_smallest_model": st.session_state["openai_model"] == "gpt-3.5-turbo",
         "length_under_500": len(prompt) < 500,
-        "no_ambiguous_words": False,  # Example: implement logic to check for ambiguous words
-        "no_need_for_clarification": False  # Example: implement logic to determine this
+        "no_ambiguous_words": not has_ambiguous_words(prompt), 
+        "no_need_for_clarification": True  # TODO: implement logic to determine this
     }
     # Logic to update other criteria goes here
     return criteria
@@ -194,9 +195,9 @@ def update_checklist(prompt):
 
 # Display the checklist in the sidebar
 def display_checklist():
-    st.sidebar.title("Eco prompt checklist:")
+    st.sidebar.title("Eco prompt checklist")
     for criteria, is_met in st.session_state['checklist'].items():
-        icon = "✅" if is_met else "❌"
+        icon = "✅" if is_met else "⬜"
         st.sidebar.write(f"{icon} {criteria.replace('_', ' ').capitalize()}")
 ############
 
