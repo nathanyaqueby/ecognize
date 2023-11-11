@@ -287,10 +287,6 @@ if authentication_status:
 
     feedback = None
 
-    # should be the end of the sidebar
-    with st.sidebar:
-        authenticator.logout("Logout", "main", key="unique_key")
-
     if "messages" not in st.session_state:
         st.session_state.messages = [{"role": "system", "content": RETRIEVAL_PROMPT}]
     if "session_id" not in st.session_state:
@@ -589,6 +585,10 @@ if authentication_status:
         st.session_state['messages'].append({"role": "assistant", "content": reply_text})
 
         st.rerun()
+
+    # should be the end of the sidebar
+    with st.sidebar:
+        authenticator.logout("Logout", "main", key="unique_key")
 
 elif st.session_state["authentication_status"] is False:
     st.error("Username/password is incorrect")
