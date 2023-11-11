@@ -212,20 +212,20 @@ if authentication_status:
         )
 
     # show a ranking of the user points
-    st.sidebar.title("Leaderboard")
+    # st.sidebar.title("Leaderboard")
     # load the csv file with the user points
     # sort the users by points
-    user_pd = user_pd.sort_values(by=["user_points"], ascending=False)
-    if len(user_pd) >= 5:
-        # Create a new DataFrame for top 5 users
-        top_users_data = {
-            "Rank": ["🥇", "🥈", "🥉", "🏅", "🏅"],
-            "Username": [user_pd.iloc[i]['username'] for i in range(5)],
-            "Points": [user_pd.iloc[i]['user_points'] for i in range(5)]
-        }
+    # user_pd = user_pd.sort_values(by=["user_points"], ascending=False)
+    # if len(user_pd) >= 5:
+    #     # Create a new DataFrame for top 5 users
+    #     top_users_data = {
+    #         "Rank": ["🥇", "🥈", "🥉", "🏅", "🏅"],
+    #         "Username": [user_pd.iloc[i]['username'] for i in range(5)],
+    #         "Points": [user_pd.iloc[i]['user_points'] for i in range(5)]
+    #     }
 
-        top_users_df = pd.DataFrame(top_users_data)
-        st.sidebar.dataframe(top_users_df, hide_index=True, use_container_width=True)
+        # top_users_df = pd.DataFrame(top_users_data)
+        # st.sidebar.dataframe(top_users_df, hide_index=True, use_container_width=True)
 
     # should be the end of the sidebar
     with st.sidebar:
