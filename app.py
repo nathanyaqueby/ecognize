@@ -30,6 +30,7 @@ with st.spinner(text="In progress..."):
     )
 
     name, authentication_status, username = authenticator.login("Login", "main")
+    st.write(name, authentication_status, username)
 
 print(authentication_status)
 
