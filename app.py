@@ -195,7 +195,7 @@ def update_checklist(prompt):
 
 # Display the checklist in the sidebar
 def display_checklist():
-    st.sidebar.title("Eco prompt checklist")
+    st.sidebar.title("Eco prompt checklist", help="This checklist is used to evaluate the sustainability of your prompt after you input it.")
     for criteria, is_met in st.session_state['checklist'].items():
         icon = "✅" if is_met else "⬜"
         st.sidebar.write(f"{icon} {criteria.replace('_', ' ').capitalize()}")
