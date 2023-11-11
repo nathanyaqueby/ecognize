@@ -3,6 +3,7 @@ import streamlit as st
 from yaml.loader import SafeLoader
 import streamlit_authenticator as stauth
 import yaml
+import numpy as np
 
 st.set_page_config(
     layout="wide",
@@ -79,10 +80,15 @@ if name is not None:
 
     if prompt := st.chat_input("What would you like to summarize?"):
         # adjust prompt to create a summary of what the user wants to know about
+        # if "list" in prompt.lower():
+        #     prompt2 = ""
         prompt2 = "Answer the following query and summarize it in 1-2 paragraphs:\n" + prompt
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
+            # add title to the chart
+            st.markdown("### Sustainability score over time")
+            st.bar_chart(np.random.randn(30, 3))
 
         with st.chat_message("assistant"):
             message_placeholder = st.empty()
