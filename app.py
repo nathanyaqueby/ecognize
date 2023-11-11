@@ -7,6 +7,8 @@ import yaml
 import numpy as np
 import pandas as pd
 from streamlit_extras.app_logo import add_logo
+from trubrics.integrations.streamlit import FeedbackCollector
+
 
 st.set_page_config(
     layout="wide",
@@ -59,6 +61,12 @@ def update_user_points(username, points):
 ############
 
 st.title("PROMPTERRA")
+
+collector = FeedbackCollector(
+    project="ecognize",
+    email=st.secrets.TRUBRICS_EMAIL,
+    password=st.secrets.TRUBRICS_PASSWORD,
+)
 
 with open("config.yaml") as file:
     config = yaml.load(file, Loader=SafeLoader)
@@ -152,10 +160,14 @@ if name is not None:
         # Check if feedback should be displayed for this message
         message_id = f"feedback_{message['id']}"
         if message['role'] == 'assistant' and message_id not in st.session_state['feedback']:
-            feedback = streamlit_feedback(
-                **feedback_kwargs,
-                key=message_id
+            feedback = collector.st_feedback(
+                component="default",
+                feedback_type="thumbs",
+                model="gpt-3.5-turbo",
+                prompt_id=None,  # see prompts to log prompts and model generations
+                open_feedback_label='[Optional] Provide additional feedback'
             )
+            
             if feedback:
                 st.session_state['feedback'][message_id] = feedback
                 # Assuming 1 point for each feedback
