@@ -103,11 +103,11 @@ if authentication_status:
 
     # add a st.metric to show how much the user's points are above or less than the average in percentage
     if user_points > average_points:
-        st.sidebar.metric("Your points", f"{user_points}", f"{round((user_points - average_points) / average_points * 100)} %")
+        st.sidebar.metric("Your points", f"{user_points} 🌿", f"{round((user_points - average_points) / average_points * 100)} %")
     elif user_points < average_points:
-        st.sidebar.metric("Your points", f"{user_points}", f"-{round((user_points - average_points) / average_points * 100)} %")
+        st.sidebar.metric("Your points", f"{user_points} 🌿", f"-{round((user_points - average_points) / average_points * 100)} %")
     else:
-        st.sidebar.metric("Your points", f"{user_points}", f"Average", delta_color="off")
+        st.sidebar.metric("Your points", f"{user_points} 🌿", f"Average", delta_color="off")
 
     # st.sidebar.markdown(f"""
     #                     <p style='font-family': Garet'>Hello, {name.split()[0]}! <p> <br>
