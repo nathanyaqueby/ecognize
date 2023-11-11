@@ -167,7 +167,7 @@ if name is not None:
                 prompt_id=None,  # see prompts to log prompts and model generations
                 open_feedback_label='[Optional] Provide additional feedback'
             )
-            
+
             if feedback:
                 st.session_state['feedback'][message_id] = feedback
                 # Assuming 1 point for each feedback
@@ -204,11 +204,11 @@ if name is not None:
                 message_placeholder.markdown(full_response + "▌")
             message_placeholder.markdown(full_response)
             # add title to the chart
-            st.markdown("### Sustainability score over time")
-            st.bar_chart(np.random.randn(30, 3))
+            # st.markdown("### Sustainability score over time")
+            # st.bar_chart(np.random.randn(30, 3))
 
         # After getting the response, add it to the session state
         st.session_state['messages'].append({"role": "assistant", "content": full_response, "id": new_message_id + 1})
 
-    if feedback:
-        st.write(feedback)
+    # if feedback:
+    #     st.write(feedback)
