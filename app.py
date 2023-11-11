@@ -34,7 +34,7 @@ with st.spinner(text="In progress..."):
 print(authentication_status)
 
 # write a welcome message after the user logs in
-if authentication_status == "authenticated":
+if name is not None:
     st.info(
         f"""
         Welcome to ECOGNIZE, {name.split[0]}! 🌍
@@ -45,57 +45,57 @@ if authentication_status == "authenticated":
         """
     )
 
-openai.api_key = st.secrets["openai_api_key"]
+    openai.api_key = st.secrets["openai_api_key"]
 
-# create a dropdown to select the model
-st.sidebar.title("Model")
-st.sidebar.markdown(
-    "Select the model you want to use. The turbo model is faster but less accurate."
-)
-# dropdown to select the model
-st.session_state["openai_model"] = st.sidebar.selectbox(
-    "Model",
-    [
-        "gpt-3.5-turbo",
-        "gpt-4",
-        "gpt-4-1106-preview"
-    ],
-    index=1,
-)
-
-# add a notification that the user picks the most sustainable option for the model if they pick "gpt-3.5-turbo"
-if st.session_state["openai_model"] == "gpt-4":
-    st.sidebar.warning(
-        "You have selected the largest, least sustainable model.  Please only use this model if you need an extensive answer."
+    # create a dropdown to select the model
+    st.sidebar.title("Model")
+    st.sidebar.markdown(
+        "Select the model you want to use. The turbo model is faster but less accurate."
+    )
+    # dropdown to select the model
+    st.session_state["openai_model"] = st.sidebar.selectbox(
+        "Model",
+        [
+            "gpt-3.5-turbo",
+            "gpt-4",
+            "gpt-4-1106-preview"
+        ],
+        index=1,
     )
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+    # add a notification that the user picks the most sustainable option for the model if they pick "gpt-3.5-turbo"
+    if st.session_state["openai_model"] == "gpt-4":
+        st.sidebar.warning(
+            "You have selected the largest, least sustainable model.  Please only use this model if you need an extensive answer."
+        )
 
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
 
-if prompt := st.chat_input("What would you like to summarize?"):
-    # adjust prompt to create a summary of what the user wants to know about
-    prompt2 = "Answer the following query and summarize it in 1-2 paragraphs:\n" + prompt
-    st.session_state.messages.append({"role": "user", "content": prompt2})
-    with st.chat_message("user"):
-        st.markdown(prompt)
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
 
-    with st.chat_message("assistant"):
-        message_placeholder = st.empty()
-        full_response = ""
-        for response in openai.ChatCompletion.create(
-            model=st.session_state["openai_model"],
-            messages=[
-                {"role": m["role"], "content": m["content"]}
-                for m in st.session_state.messages
-            ],
-            max_tokens=200,
-            stream=True,
-        ):
-            full_response += response.choices[0].delta.get("content", "")
-            message_placeholder.markdown(full_response + "▌")
-        message_placeholder.markdown(full_response)
-    st.session_state.messages.append({"role": "assistant", "content": full_response})
+    if prompt := st.chat_input("What would you like to summarize?"):
+        # adjust prompt to create a summary of what the user wants to know about
+        prompt2 = "Answer the following query and summarize it in 1-2 paragraphs:\n" + prompt
+        st.session_state.messages.append({"role": "user", "content": prompt2})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
+        with st.chat_message("assistant"):
+            message_placeholder = st.empty()
+            full_response = ""
+            for response in openai.ChatCompletion.create(
+                model=st.session_state["openai_model"],
+                messages=[
+                    {"role": m["role"], "content": m["content"]}
+                    for m in st.session_state.messages
+                ],
+                max_tokens=200,
+                stream=True,
+            ):
+                full_response += response.choices[0].delta.get("content", "")
+                message_placeholder.markdown(full_response + "▌")
+            message_placeholder.markdown(full_response)
+        st.session_state.messages.append({"role": "assistant", "content": full_response})
