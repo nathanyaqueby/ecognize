@@ -159,6 +159,9 @@ if authentication_status:
     col41, col42 = st.sidebar.columns(2)
     add_metrics(col41, col42, username)
 
+    # add refresh button to reload the mongo db
+    st.sidebar.button("Refresh points", type="primary", on_click=load_all_from_mongo(username))
+
     # st.sidebar.markdown(f"""
     #                     <p style='font-family': Garet'>Hello, {name.split()[0]}! <p> <br>
     #                     <p style='font-family': Garet'>Your points: {user_points}</p>
@@ -199,15 +202,7 @@ if authentication_status:
 
     # should be the end of the sidebar
     with st.sidebar:
-
-        # create two cols
-        col51, col52 = st.columns(2)
-
-        with col51:
-            authenticator.logout("Logout", "main", key="unique_key")
-        with col52:
-            # add refresh button
-            st.button("Refresh", on_click=add_metrics(col41, col42, username))
+        authenticator.logout("Logout", "main", key="unique_key")
 
     if "messages" not in st.session_state:
         st.session_state.messages = []
