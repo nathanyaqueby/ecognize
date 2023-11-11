@@ -102,11 +102,6 @@ if name is not None:
                 <p style='font-family': Garet'>Welcome to <b>PROMPTERRA</b> by <b>ECOGNIZE</b> 🌍</p> <br>
                 <p style='font-family': Garet'>PROMPTERRA is a platform that trains users to use OpenAI's GPT in a more sustainable way. To get started, type a prompt in the chat box on the left and click enter. The AI will respond with a summary of your prompt. You can then provide feedback on the response to gain points!</p>
                 """, unsafe_allow_html=True)
-    
-    st.markdown(""" <style> .font {
-    font-size:50px ; font-family: 'Cooper Black'; color: #FF9633;} 
-    </style> """, unsafe_allow_html=True)
-    st.markdown('<p class="font">Guess the object Names</p>', unsafe_allow_html=True)
 
     openai.api_key = st.secrets["openai_api_key"]
     feedback = None
@@ -210,10 +205,10 @@ if name is not None:
                 )
 
     if prompt := st.chat_input("What would you like to summarize?"):
-        # adjust prompt to create a summary of what the user wants to know about
-        # if "list" in prompt.lower():
-        #     prompt2 = ""
-        prompt2 = "Answer the following query and summarize it in 1-2 paragraphs:\n" + prompt
+        # adjust prompt to add sources in a specified format
+        prompt2 = "Answer the following query and summarize it in 1-2 paragraphs:\n" + prompt + " Write the sources you used in the following format: [source1], [source2], [source3]..."
+
+        # prompt2 = "Answer the following query and summarize it in 1-2 paragraphs:\n" + prompt
         new_message_id = len(st.session_state['messages'])  # Unique ID for the new message
         st.session_state['messages'].append({"role": "user", "content": prompt, "id": new_message_id})
 
@@ -240,7 +235,7 @@ if name is not None:
                 prompt=prompt,
                 generation=full_response,
                 session_id=st.session_state.session_id,
-                # tags=tags,
+                tags="prompterra",
                 user_id=str(st.secrets["TRUBRICS_EMAIL"])
                 )
             st.session_state.prompt_ids.append(logged_prompt.id)
