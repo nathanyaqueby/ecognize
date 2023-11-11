@@ -106,7 +106,7 @@ if authentication_status:
     average_query = user_points_pd["num_query"].mean()
 
     # create two cols
-    col41, col42 = st.sidebar.columns([1, 1])
+    col41, col42 = st.sidebar.columns([2, 3])
 
     with col41:
         # add a st.metric to show how much the user's points are above or less than the average in percentage
