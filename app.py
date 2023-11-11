@@ -168,7 +168,7 @@ if name is not None:
             )
 
             if feedback:
-                st.session_state['feedback'][message_id] = feedback
+                st.session_state['feedback'][feedback_key] = feedback
                 # Assuming 1 point for each feedback
                 user_points = update_user_points(username, 1)
                 # add a notification that the user has earned a point
