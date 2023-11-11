@@ -70,6 +70,11 @@ def update_user(username, user_point, sustainability_score):
     else:
         print(f"No user found with the username {username}")
 
+# Callback function for refresh button
+def refresh_metrics():
+    average_points, average_query, user_points, user_num_query = load_all_from_mongo(username)
+    st.session_state['metrics'] = (average_points, average_query, user_points, user_num_query)
+
 def load_from_mongo(username):
     """ Fetch a single document based on username """
     query = {"username": username}
@@ -101,7 +106,7 @@ def load_all_from_mongo(username):
 
 def add_metrics(cola, colb, username):
 
-    average_points, average_query, user_points, user_num_query = load_all_from_mongo(username)
+    average_points, average_query, user_points, user_num_query = st.session_state['metrics']
 
     with cola:
         # add a st.metric to show how much the user's points are above or less than the average in percentage
@@ -160,7 +165,7 @@ if authentication_status:
     add_metrics(col41, col42, username)
 
     # add refresh button to reload the mongo db
-    st.sidebar.button("Refresh points", type="primary", on_click=load_all_from_mongo(username))
+    st.sidebar.button("Refresh points", type="primary", on_click=refresh_metrics(), use_column_width=True)
 
     # st.sidebar.markdown(f"""
     #                     <p style='font-family': Garet'>Hello, {name.split()[0]}! <p> <br>
