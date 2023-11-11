@@ -164,6 +164,9 @@ if authentication_status:
         top_users_df = pd.DataFrame(top_users_data)
         st.sidebar.dataframe(top_users_df, hide_index=True, use_container_width=True)
 
+    # should be the end of the sidebar
+    authenticator.logout("Logout", "main", key="unique_key")
+
     if "messages" not in st.session_state:
         st.session_state.messages = []
     if "prompt_ids" not in st.session_state:
