@@ -7,12 +7,18 @@ from streamlit_feedback import streamlit_feedback
 import yaml
 import numpy as np
 import pandas as pd
+from pathlib import Path
 from streamlit_extras.app_logo import add_logo
 from trubrics.integrations.streamlit import FeedbackCollector
 from search import search_bing
 import uuid
+import datetime as dt
+from langchain.embeddings.openai import OpenAIEmbeddings
+
+UTC_TIMESTAMP = int(dt.datetime.utcnow().timestamp())
 
 TIMEOUT = 60
+CACHE_SIMILARITY_THRESHOLD = 0.92   # Found by experimentation
 
 RETRIEVAL_PROMPT = """
 You are a powerful AI chat assistant that can answer user questions by retrieving relevant information from various sources. If you call any functions, please follow strictly the function descriptions and infer the parameters from the predefined ones based on the message history until this point. Do not make up your own function call parameters that are not defined.
@@ -29,15 +35,18 @@ SOURCES: {
 }
 """
 
+# Embedding model
+embeddings = OpenAIEmbeddings()
+
 st.set_page_config(
     layout="wide",
     # initial_sidebar_state="expanded",
-    page_title="ECOGNIZE",
+    page_title="PR🌍MPTERRA by ECOGNIZE",
     page_icon="🌍",
     menu_items={
         "Get Help": "https://www.github.com/nathanyaqueby/ecognize/",
         "Report a bug": "https://www.github.com/nathanyaqueby/ecognize/issues",
-        "About": "Unlike OpenAI, our default model is most sustainable one. Learn to adjust your prompts to help the planet!",
+        "About": "Learn to adjust your calls to help the planet!",
     },
 )
 
@@ -77,6 +86,18 @@ def update_user_points(username, points):
     new_points = user_points_pd[user_points_pd['username'] == username]['user_points'].values[0]
     st.session_state.setdefault('user_points', {})[username] = new_points
     return new_points
+
+def initialize_cache():
+    # LOCAL VERSION: load "cache.csv" file into pandas DataFrame if it exists, otherwise create a new one
+    if Path("cache.csv").is_file():
+        return pd.read_csv("cache.csv")
+    else:
+        return pd.DataFrame(columns=["query", "embedding", "answer", "expires_at"])
+    
+def add_to_cache(query, embedding, answer, expires_at):
+    pass
+
+
 ############
 
 ############ Function calling
@@ -89,7 +110,7 @@ functions = [
             "properties": {
                 "query": {
                     "type": "string",
-                    "description": f"Query string to search the posts for, inferred from the user message and ALWAYS translated to ENGLISH before passing on to the function. Sample query styles: 'expected development of stainless steel market pricing in December 2022' or 'possible energy price developments over January-March 2023'. Note: today is {dt.datetime.utcfromtimestamp(UTC_TIMESTAMP).strftime('%Y-%m-%d')}."
+                    "description": f"Query string to search the posts for, inferred from the user message and ALWAYS translated to ENGLISH before passing on to the function. Sample query styles: 'expected development of stainless steel market pricing in December 2022' or 'possible energy price developments over January-March 2023'. Note: today is {dt.datetime.utcfromtimestamp(UTC_TIMESTAMP).strftime('%Y-%m-%d')}. You can use this information in your query to absolute dates instead of relative ones."
                 },
                 "search_index": {
                     "type": "string",
@@ -105,7 +126,7 @@ available_functions = {
     "search_bing": search_bing,
 }
 
-st.title("PROMPTERRA")
+st.title("PR🌍MPTERRA")
 
 collector = FeedbackCollector(
     project="ecognize",
@@ -133,36 +154,13 @@ if name is not None:
 
     st.info(
         f"""
-        Welcome to **PR🌍MPTERRA** by EC🌍GNIZE 
+        Welcome to **PROMPTERRA** by ECOGNIZE 
 
-        PR🌍MPTERRA is a platform that trains users to use OpenAI's GPT in a more sustainable way.
+        PROMPTERRA is a platform that trains users to use OpenAI's GPT in a more sustainable way.
         """
     )
 
     feedback = None
-
-    # # create a dropdown to select the model
-    # st.sidebar.title("Model")
-    # st.sidebar.markdown(
-    #     "Select the model you want to use. The turbo model is faster but less accurate."
-    # )
-    # # dropdown to select the model
-    # st.session_state["openai_model"] = st.sidebar.selectbox(
-    #     "Model",
-    #     [
-    #         "gpt-3.5-turbo",
-    #         "gpt-4",
-    #         "gpt-4-1106-preview"
-    #     ],
-    #     label_visibility="collapsed",
-    #     index=1,
-    # )
-
-    # # add a notification that the user picks the most sustainable option for the model if they pick "gpt-3.5-turbo"
-    # if st.session_state["openai_model"] == "gpt-4":
-    #     st.sidebar.warning(
-    #         "You have selected the largest, least sustainable model.  Please only use this model if you need an extensive answer."
-    #     )
 
     # show a ranking of the user points
     st.sidebar.title("Leaderboard")
@@ -183,12 +181,12 @@ if name is not None:
 
     if "messages" not in st.session_state:
         st.session_state.messages = [{"role": "system", "content": RETRIEVAL_PROMPT}]
-    if "prompt_ids" not in st.session_state:
-        st.session_state["prompt_ids"] = []
     if "session_id" not in st.session_state:
         st.session_state["session_id"] = str(uuid.uuid4())
     if "feedback" not in st.session_state:
         st.session_state.feedback = {}
+    if "cache" not in st.session_state:
+        st.session_state.cache = initialize_cache()
 
     feedback_kwargs = {
         "feedback_type": "thumbs",
@@ -198,7 +196,42 @@ if name is not None:
 
     # Assign IDs to existing messages if they don't have one
     for n, msg in enumerate(st.session_state["messages"]):
-        st.chat_message(msg["role"]).write(msg["content"])
+        if msg["role"] == "system":
+            continue
+        contents = msg["content"]
+        sources = ""
+        with st.chat_message(msg["role"]):
+            if msg["role"] == "assistant":
+                if "SOURCES:" in contents:
+                    contents, sources = contents.split("SOURCES:", 1)
+                    # Clean up the sources string
+                    sources = sources.strip()
+                    if len(sources.split("}", 1)) == 2:
+                        sources, contents_post = sources.split("}", 1)
+                        sources += "}"
+                        contents += f"\n{contents_post}"
+            st.markdown(contents)
+            if len(sources) > 0:
+                try:
+                    sources = json.loads(sources)
+                    other_sources = []
+                    for source in sources["sources"]:
+                        if source.startswith("http") and source.endswith(".mp4"):
+                            st.video(source)
+                        else:
+                            other_sources.append(source)
+                    with st.expander("Sources"):
+                        # Turn those sources into download links which we have the file on
+                        for source_file in other_sources:
+                            if source_file.startswith("http"):
+                                st.link_button(source_file, source_file)
+                            else:
+                                st.text(source_file)
+                except Exception as e:
+                    st.warning(f"Error parsing sources {sources}: {e}")
+                    # Display raw sources
+                    with st.expander("Sources"):
+                        st.markdown(sources)
 
         if msg["role"] == "assistant":
             if n > 0:
@@ -212,7 +245,6 @@ if name is not None:
                     open_feedback_label="[Optional] Provide additional feedback",
                     model="gpt-4",
                     key=feedback_key,
-                    prompt_id=st.session_state.prompt_ids[int(n / 2) - 1],
                     user_id=st.secrets["TRUBRICS_EMAIL"]
                 )
             else:
@@ -238,6 +270,13 @@ if name is not None:
                 st.sidebar.success(
                     f"You have earned a point! Your points: {user_points}"
                 )
+    
+    # Save cache locally to CSV (if it has a length > 0)
+    if "cache" in st.session_state and len(st.session_state.cache) > 0:
+        with st.sidebar:
+            st.write("Cache")
+            st.dataframe(st.session_state.cache)
+        st.session_state.cache.to_csv("cache.csv", index=False)
 
     if prompt := st.chat_input("Ask me anything"):
 
@@ -248,21 +287,22 @@ if name is not None:
             st.markdown(prompt)
 
         with st.chat_message("assistant"):
-            message_placeholder = st.empty()
             # For streaming, we need to loop through the response generator
             reply_text = ""
             function_name = ""
             function_args = ""
             for chunk in openai.ChatCompletion.create(
-                model="gpt-35-turbo",
-                deployment_id="gpt-35-turbo",
+                # model="gpt-35-turbo-16k",
+                deployment_id="gpt-35-turbo-16k",
                 messages=st.session_state['messages'],
-                max_tokens=200,
+                max_tokens=1000,
                 timeout=TIMEOUT,
                 function_call="auto",
                 functions=functions,
                 stream=True,
             ):
+                if len(chunk["choices"]) == 0:
+                    continue
                 delta = chunk["choices"][0].get("delta", {})
                 content = delta.get("content", None)
                 function_call = delta.get("function_call", None)
@@ -275,9 +315,6 @@ if name is not None:
                     # Sanitize output
                     if reply_text.startswith("AI: "):
                         reply_text = reply_text.split("AI: ", 1)[1]
-                
-                # Continuously write the response in Streamlit
-                message_placeholder.markdown(reply_text)
 
             # Collect full function call
             if function_name != "" and function_args != "":
@@ -290,7 +327,7 @@ if name is not None:
                 if reply_text.startswith("AI: "):
                     reply_text = reply_text.split("AI: ", 1)[1]
 
-                message_placeholder.markdown(reply_text)
+                st.markdown(reply_text)
 
             # Model wants to call a function and call it, if appropriate
             else:
@@ -307,7 +344,28 @@ if name is not None:
                 query = fun_args.get("query", None)
 
                 # Check in the cache if the response is already there and if so just return the relevant answer
-                # NOT IMPLEMENTED YET - GO STRAIGHT TO RETRIEVAL AND NEW GENERATION
+                if query is not None:
+                    # Vectorize the query
+                    query_embedding = embeddings.embed_query(query)
+
+                    temp_cache = st.session_state.cache.copy()
+                    # Filter out expired cache entries
+                    temp_cache = temp_cache[temp_cache["expires_at"] > UTC_TIMESTAMP]
+                    # Update the cache
+                    st.session_state.cache = temp_cache
+                    # Loop through the cache and calculate the cosine similarity between the query embedding and each of the cached embeddings
+                    try:
+                        temp_cache["similarity"] = temp_cache["embedding"].apply(lambda x: np.dot(np.array(eval(x)), np.array(query_embedding)) / (np.linalg.norm(np.array(eval(x))) * np.linalg.norm(np.array(query_embedding))))
+                    except: # x might already be a list
+                        temp_cache["similarity"] = temp_cache["embedding"].apply(lambda x: np.dot(np.array(x), np.array(query_embedding)) / (np.linalg.norm(np.array(x)) * np.linalg.norm(np.array(query_embedding))))
+                    # Sort the cache by similarity, descending
+                    temp_cache = temp_cache.sort_values(by=["similarity"], ascending=False)
+                    # See if the top result is above a certain threshold
+                    if len(temp_cache) > 0 and temp_cache.iloc[0]["similarity"] > CACHE_SIMILARITY_THRESHOLD:
+                        # Directly add that answer as the chat response
+                        reply_text = temp_cache.iloc[0]["answer"]
+                        st.session_state['messages'].append({"role": "assistant", "content": f"(Cached Answer)\n\n{reply_text}"})
+                        st.rerun()
 
                 if function is None:
                     fun_res = ["Error, no function specified"]
@@ -327,17 +385,20 @@ if name is not None:
                 messages.extend([{"role": "function", "name": fun_name, "content": one_fun_res} for one_fun_res in fun_res])
 
                 # For streaming, we need to loop through the response generator
+                message_placeholder = st.empty()
                 reply_text = ""
                 for chunk in openai.ChatCompletion.create(
-                    model="gpt-4",
+                    # model="gpt-4",
                     deployment_id="gpt-4",
                     messages=messages,
                     max_tokens=1500,
                     timeout=TIMEOUT,
-                    function_call=None,
-                    functions=None,
+                    # function_call="auto",
+                    # functions=[],
                     stream=True,
                 ):
+                    if len(chunk["choices"]) == 0:
+                        continue
                     delta = chunk["choices"][0].get("delta", {})
                     content = delta.get("content", None)
                     function_call = delta.get("function_call", None)
@@ -350,9 +411,13 @@ if name is not None:
                         # Sanitize output
                         if reply_text.startswith("AI: "):
                             reply_text = reply_text.split("AI: ", 1)[1]
-                    
+
+                    render_text = reply_text
+                    if "SOURCES:" in render_text:
+                        render_text, sources = render_text.split("SOURCES:", 1)
+                
                     # Continuously write the response in Streamlit
-                    message_placeholder.markdown(reply_text)
+                    message_placeholder.markdown(render_text)
 
                 # # Collect full function call
                 # if function_name != "" and function_args != "":
@@ -364,7 +429,11 @@ if name is not None:
                 if reply_text.startswith("AI: "):
                     reply_text = reply_text.split("AI: ", 1)[1]
 
-                message_placeholder.markdown(reply_text)
+                render_text = reply_text
+                if "SOURCES:" in render_text:
+                    render_text, sources = render_text.split("SOURCES:", 1)
+
+                message_placeholder.markdown(render_text)
 
                 logged_prompt = collector.log_prompt(
                     config_model={"model": "gpt-4"},
@@ -375,10 +444,25 @@ if name is not None:
                     user_id=str(st.secrets["TRUBRICS_EMAIL"])
                     )
                 
-                st.session_state.prompt_ids.append(logged_prompt.id)
+                # Add the query, its embedding, the answer (reply_text) and the expiration date to the cache. Expires in 1 day (5 minutes for testing)
+                st.session_state.cache = pd.concat([
+                    st.session_state.cache,
+                    pd.DataFrame(
+                        {
+                            "query": [query],
+                            "embedding": [query_embedding],
+                            "answer": [reply_text],
+                            "expires_at": [UTC_TIMESTAMP + 5 * 60]
+                        }
+                    )
+                ])
+
+                # st.session_state.prompt_ids.append(logged_prompt.id)
 
         # After getting the response, add it to the session state
         st.session_state['messages'].append({"role": "assistant", "content": reply_text})
+
+        st.rerun()
 
     # if feedback:
     #     st.write(feedback)

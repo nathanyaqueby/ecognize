@@ -6,3 +6,4 @@ streamlit-extras
 trubrics
 numpy
 sumy
+langchain
