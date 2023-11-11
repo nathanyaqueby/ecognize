@@ -87,7 +87,7 @@ with st.spinner(text="In progress..."):
     name, authentication_status, username = authenticator.login("Login", "main")
 
 # write a welcome message after the user logs in
-if authentication_status
+if authentication_status:
     user_points = load_user_points(username)
     st.sidebar.write(f"Hello, {name.split()[0]}!\nYour points: {user_points}")
 
