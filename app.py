@@ -160,6 +160,10 @@ if authentication_status:
     # user_points = load_user_points(username)
     st.sidebar.title(f"Hello, {name.split()[0]}!")
 
+    # Initialize session state for metrics
+    if 'metrics' not in st.session_state:
+        st.session_state['metrics'] = load_all_from_mongo(username)
+
     # create two cols
     col41, col42 = st.sidebar.columns(2)
     add_metrics(col41, col42, username)
