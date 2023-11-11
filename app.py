@@ -104,7 +104,7 @@ if name is not None:
             if feedback_key not in st.session_state:
                 st.session_state[feedback_key] = 0
 
-            streamlit_feedback(
+            feedback = streamlit_feedback(
                 **feedback_kwargs,
                 key=feedback_key,
             )
@@ -133,7 +133,7 @@ if name is not None:
                 full_response += response.choices[0].delta.get("content", "")
                 message_placeholder.markdown(full_response + "▌")
             message_placeholder.markdown(full_response)
-            feedback = streamlit_feedback(feedback_type="thumbs")
+            # feedback = streamlit_feedback(feedback_type="thumbs")
             # add title to the chart
             st.markdown("### Sustainability score over time")
             st.bar_chart(np.random.randn(30, 3))
