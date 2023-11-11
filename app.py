@@ -165,7 +165,8 @@ if authentication_status:
         st.sidebar.dataframe(top_users_df, hide_index=True, use_container_width=True)
 
     # should be the end of the sidebar
-    authenticator.logout("Logout", "main", key="unique_key")
+    with st.sidebar:
+        authenticator.logout("Logout", "main", key="unique_key")
 
     if "messages" not in st.session_state:
         st.session_state.messages = []
