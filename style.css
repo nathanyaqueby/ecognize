@@ -1,12 +1,20 @@
+html, body, [class*="css"] {
+    font-family: 'Roboto', sans-serif; 
+    font-style: normal;
+    /* font-size: 18px; */
+    font-weight: 500;
+    src: url("fonts/Garet-Book.ttf") format("truetype");
+}
+
 @font-face {
-    font-family: "StagSans";
+    font-family: "Garet";
     font-style: normal;
     font-weight: 500;
     src: url("fonts/Garet-Book.ttf") format("truetype");
 }
 
 @font-face {
-    font-family: "StagSansBold";
+    font-family: "GaretBold";
     font-style: bold;
     font-weight: 300;
     src: url("fonts/Garet-Heavy.ttf") format("truetype");
