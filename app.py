@@ -99,6 +99,12 @@ if name is not None:
         index=1,
     )
 
+    # add a notification that the user picks the most sustainable option for the model if they pick "gpt-3.5-turbo"
+    if st.session_state["openai_model"] == "gpt-4":
+        st.sidebar.warning(
+            "You have selected the largest, least sustainable model.  Please only use this model if you need an extensive answer."
+        )
+
     # show a ranking of the user points
     st.sidebar.title("Leaderboard")
     # load the csv file with the user points
@@ -106,20 +112,27 @@ if name is not None:
     # sort the users by points
     user_points_pd = user_points_pd.sort_values(by=["user_points"], ascending=False)
     if len(user_points_pd) >= 5:
-        top_users = f"""
-        🥇 {user_points_pd.iloc[0]['username']}: {user_points_pd.iloc[0]['user_points']} \n
-        🥈 {user_points_pd.iloc[1]['username']}: {user_points_pd.iloc[1]['user_points']} \n
-        🥉 {user_points_pd.iloc[2]['username']}: {user_points_pd.iloc[2]['user_points']} \n
-        🏅 {user_points_pd.iloc[3]['username']}: {user_points_pd.iloc[3]['user_points']} \n
-        🏅 {user_points_pd.iloc[4]['username']}: {user_points_pd.iloc[4]['user_points']}
-        """
-        st.sidebar.markdown(top_users)
+        # Create a new DataFrame for top 5 users
+        top_users_data = {
+            "Rank": ["🥇", "🥈", "🥉", "🏅", "🏅"],
+            "Username": [
+                user_points_pd.iloc[0]['username'],
+                user_points_pd.iloc[1]['username'],
+                user_points_pd.iloc[2]['username'],
+                user_points_pd.iloc[3]['username'],
+                user_points_pd.iloc[4]['username']
+            ],
+            "Points": [
+                user_points_pd.iloc[0]['user_points'],
+                user_points_pd.iloc[1]['user_points'],
+                user_points_pd.iloc[2]['user_points'],
+                user_points_pd.iloc[3]['user_points'],
+                user_points_pd.iloc[4]['user_points']
+            ]
+        }
 
-    # add a notification that the user picks the most sustainable option for the model if they pick "gpt-3.5-turbo"
-    if st.session_state["openai_model"] == "gpt-4":
-        st.sidebar.warning(
-            "You have selected the largest, least sustainable model.  Please only use this model if you need an extensive answer."
-        )
+        top_users_df = pd.DataFrame(top_users_data)
+        st.sidebar.table(top_users_df)
 
     if "messages" not in st.session_state:
         st.session_state.messages = []
