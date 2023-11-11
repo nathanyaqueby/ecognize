@@ -58,13 +58,17 @@ collection = db["sustainability_scores"]
 def update_user(username, user_point, sustainability_score):
     """ Update the user's points and sustainability score based on username """
     user_document = collection.find_one({"username": username})
+
+    new_user_point = 100
+    new_sustainability_score = 2
+
     if user_document:
         result = collection.update_one(
             {"_id": user_document["_id"]},
-            {"$set": {"user_point": user_point, "sustainability_score": sustainability_score}}
+            {"$set": {"user_point": new_user_point, "sustainability_score": new_sustainability_score}}
         )
         if result.matched_count > 0:
-            print(f"User {username} updated. Points: {user_point}, Sustainability Score: {sustainability_score}")
+            print(f"User {username} updated. Points: {new_user_point}, Sustainability Score: {new_sustainability_score}")
         else:
             print(f"Update operation did not find the user {username}")
     else:
