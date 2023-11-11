@@ -103,11 +103,11 @@ if authentication_status:
 
     # add a st.metric to show how much the user's points are above or less than the average in percentage
     if user_points > average_points:
-        st.sidebar.metric("Your points", f"{user_points} 🌿", f"{round((user_points - average_points) / average_points * 100)} %")
+        st.sidebar.metric("Your points", f"{user_points} 🌿", f"{round((user_points - average_points) / average_points * 100)} %", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
     elif user_points < average_points:
-        st.sidebar.metric("Your points", f"{user_points} 🌿", f"-{round((user_points - average_points) / average_points * 100)} %")
+        st.sidebar.metric("Your points", f"{user_points} 🌿", f"-{round((user_points - average_points) / average_points * 100)} %", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
     else:
-        st.sidebar.metric("Your points", f"{user_points} 🌿", f"Average", delta_color="off")
+        st.sidebar.metric("Your points", f"{user_points} 🌿", f"Average", delta_color="off", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
 
     # st.sidebar.markdown(f"""
     #                     <p style='font-family': Garet'>Hello, {name.split()[0]}! <p> <br>
