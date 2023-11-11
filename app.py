@@ -95,12 +95,24 @@ if name is not None:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
+        # Check if feedback should be displayed for this message
+        message_id = f"feedback_{message['id']}"
+        if message['role'] == 'assistant' and message_id not in st.session_state['feedback']:
+            feedback = streamlit_feedback(
+                **feedback_kwargs,
+                key=message_id
+            )
+            if feedback:
+                st.session_state['feedback'][message_id] = feedback
+
     if prompt := st.chat_input("What would you like to summarize?"):
         # adjust prompt to create a summary of what the user wants to know about
         # if "list" in prompt.lower():
         #     prompt2 = ""
         prompt2 = "Answer the following query and summarize it in 1-2 paragraphs:\n" + prompt
-        st.session_state.messages.append({"role": "user", "content": prompt})
+        new_message_id = len(st.session_state['messages'])  # Unique ID for the new message
+        st.session_state['messages'].append({"role": "user", "content": prompt, "id": new_message_id})
+
         with st.chat_message("user"):
             st.markdown(prompt)
 
@@ -125,16 +137,17 @@ if name is not None:
             st.bar_chart(np.random.randn(30, 3))
 
             # Render feedback widget
-            feedback = streamlit_feedback(
-                **feedback_kwargs,
-                key=f"feedback_{len(st.session_state.messages)}",
-            )
+            # feedback = streamlit_feedback(
+            #     **feedback_kwargs,
+            #     key=f"feedback_{len(st.session_state.messages)}",
+            # )
 
-            # Update the feedback state
-            if feedback:
-                st.session_state[f"feedback_{len(st.session_state.messages)}"] = feedback
+            # # Update the feedback state
+            # if feedback:
+            #     st.session_state[f"feedback_{len(st.session_state.messages)}"] = feedback
 
-        st.session_state.messages.append({"role": "assistant", "content": full_response})
+        # After getting the response, add it to the session state
+        st.session_state['messages'].append({"role": "assistant", "content": full_response, "id": new_message_id + 1})
 
     if feedback:
         st.write(feedback)
