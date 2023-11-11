@@ -87,7 +87,7 @@ with st.spinner(text="In progress..."):
     name, authentication_status, username = authenticator.login("Login", "main")
 
 # write a welcome message after the user logs in
-if name is not None:
+if authentication_status
     user_points = load_user_points(username)
     st.sidebar.write(f"Hello, {name.split()[0]}!\nYour points: {user_points}")
 
@@ -248,5 +248,10 @@ if name is not None:
         # After getting the response, add it to the session state
         st.session_state['messages'].append({"role": "assistant", "content": full_response, "id": new_message_id + 1})
 
+elif st.session_state["authentication_status"] is False:
+    st.error("Username/password is incorrect")
+
+elif st.session_state["authentication_status"] is None:
+    st.info("Please enter your username and password")
     # if feedback:
     #     st.write(feedback)
