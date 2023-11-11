@@ -34,15 +34,24 @@ def load_user_points(username):
     return points
 
 def update_user_points(username, points):
-    # Placeholder for updating points in a file or database
-    # Replace this with actual code to store points in a persistent storage
-    current_points = st.session_state.get('user_points', {}).get(username, 0)
-    new_points = current_points + points
-    st.session_state.setdefault('user_points', {})[username] = new_points
-    # update the csv file with the user points
+    # Load the current points from the CSV
     user_points_pd = pd.read_csv("user_points.csv")
-    user_points_pd[user_points_pd["username"] == username]["user_points"] = new_points
+
+    # Check if the user exists in the DataFrame
+    if username in user_points_pd['username'].values:
+        # Update the user's points
+        user_points_pd.loc[user_points_pd['username'] == username, 'user_points'] += points
+    else:
+        # Add new user to the DataFrame
+        new_row = {'username': username, 'user_points': points}
+        user_points_pd = user_points_pd.append(new_row, ignore_index=True)
+
+    # Save updated DataFrame to CSV
     user_points_pd.to_csv("user_points.csv", index=False)
+
+    # Update session state
+    new_points = user_points_pd[user_points_pd['username'] == username]['user_points'].values[0]
+    st.session_state.setdefault('user_points', {})[username] = new_points
     return new_points
 ############
 
@@ -60,9 +69,6 @@ with st.spinner(text="In progress..."):
     )
 
     name, authentication_status, username = authenticator.login("Login", "main")
-    # st.write(name, authentication_status, username)
-
-# print(authentication_status)
 
 # write a welcome message after the user logs in
 if name is not None:
@@ -115,24 +121,12 @@ if name is not None:
         # Create a new DataFrame for top 5 users
         top_users_data = {
             "Rank": ["🥇", "🥈", "🥉", "🏅", "🏅"],
-            "Username": [
-                user_points_pd.iloc[0]['username'],
-                user_points_pd.iloc[1]['username'],
-                user_points_pd.iloc[2]['username'],
-                user_points_pd.iloc[3]['username'],
-                user_points_pd.iloc[4]['username']
-            ],
-            "Points": [
-                user_points_pd.iloc[0]['user_points'],
-                user_points_pd.iloc[1]['user_points'],
-                user_points_pd.iloc[2]['user_points'],
-                user_points_pd.iloc[3]['user_points'],
-                user_points_pd.iloc[4]['user_points']
-            ]
+            "Username": [user_points_pd.iloc[i]['username'] for i in range(5)],
+            "Points": [user_points_pd.iloc[i]['user_points'] for i in range(5)]
         }
 
         top_users_df = pd.DataFrame(top_users_data)
-        st.sidebar.dataframe(top_users_df, hide_index=True)
+        st.sidebar.dataframe(top_users_df, hide_index=True, use_container_width=True)
 
     if "messages" not in st.session_state:
         st.session_state.messages = []
