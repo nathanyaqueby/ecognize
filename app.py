@@ -11,6 +11,8 @@ from streamlit_extras.app_logo import add_logo
 from trubrics.integrations.streamlit import FeedbackCollector
 from search import search_bing
 import uuid
+from pymongo import MongoClient
+from bson import ObjectId
 
 TIMEOUT = 60
 
@@ -41,6 +43,9 @@ st.set_page_config(
     },
 )
 
+with open("style.css", "r") as css:
+    st.markdown(f"<style>{css.read()}</style>", unsafe_allow_html=True)
+
 add_logo("ecognize logo.png", height=100)
 
 ############ functions
@@ -57,26 +62,91 @@ def load_user_points(username):
     points = user_points_pd[user_points_pd["username"] == username]["user_points"].values[0]
     return points
 
-def update_user_points(username, points):
-    # Load the current points from the CSV
-    user_points_pd = pd.read_csv("user_points.csv")
+# Replace the following with your own connection string
+MONGO_URI = st.secrets["MONGO_URI"]
+# Connect to the MongoDB Atlas cluster
+client = MongoClient(MONGO_URI)
 
-    # Check if the user exists in the DataFrame
-    if username in user_points_pd['username'].values:
-        # Update the user's points
-        user_points_pd.loc[user_points_pd['username'] == username, 'user_points'] += points
+# Select your database
+db = client["junction"]
+
+# Select your collection
+collection = db["sustainability_scores"]
+
+def update_user(username, user_point, sustainability_score):
+    """ Update the user's points and sustainability score based on username """
+    user_document = collection.find_one({"username": username})
+
+    new_user_point = user_document["user_point"] + user_point
+    new_sustainability_score = user_document["sustainability_score"] + sustainability_score
+
+    if user_document:
+        result = collection.update_one(
+            {"_id": user_document["_id"]},
+            {"$set": {"user_point": new_user_point, "sustainability_score": new_sustainability_score}}
+        )
+        if result.matched_count > 0:
+            print(f"User {username} updated. Points: {new_user_point}, Sustainability Score: {new_sustainability_score}")
+        else:
+            print(f"Update operation did not find the user {username}")
     else:
-        # Add new user to the DataFrame
-        new_row = {'username': username, 'user_points': points}
-        user_points_pd = user_points_pd.append(new_row, ignore_index=True)
+        print(f"No user found with the username {username}")
 
-    # Save updated DataFrame to CSV
-    user_points_pd.to_csv("user_points.csv", index=False)
+# Callback function for refresh button
+def refresh_metrics():
+    average_points, average_query, user_points, user_num_query = load_all_from_mongo(username)
+    st.session_state['metrics'] = (average_points, average_query, user_points, user_num_query)
 
-    # Update session state
-    new_points = user_points_pd[user_points_pd['username'] == username]['user_points'].values[0]
-    st.session_state.setdefault('user_points', {})[username] = new_points
-    return new_points
+def load_from_mongo(username):
+    """ Fetch a single document based on username """
+    query = {"username": username}
+    document = collection.find_one(query)
+    return document
+
+def load_all_from_mongo(username):
+    # compute the average points of all users
+    user_pd = load_from_mongo(username)
+    user_points = user_pd["user_point"]
+    user_num_query = user_pd["sustainability_score"]
+
+    # load all users nqueby, tianyi, cmakafui, angelineov, outokumpu from mongo
+    users = ["nqueby", "tianyi", "cmakafui", "angelineov", "outokumpu"]
+    sustainability_scores = []
+    user_total_points = 0
+
+    for user in users:
+        user_document = load_from_mongo(user)
+        sustainability_scores.append(user_document["sustainability_score"])
+        user_total_points += user_document["user_point"]
+
+    average_points = user_total_points / len(users)
+
+    # get the user's number of query from the database
+    average_query = np.mean(sustainability_scores)
+
+    return average_points, average_query, user_points, user_num_query
+
+def add_metrics(cola, colb, username):
+
+    average_points, average_query, user_points, user_num_query = st.session_state['metrics']
+
+    with cola:
+        # add a st.metric to show how much the user's points are above or less than the average in percentage
+        if user_points > average_points:
+            st.metric("Your points", f"{user_points} 🌍", f"{round((user_points - average_points) / average_points * 100)} %", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
+        elif user_points < average_points:
+            st.metric("Your points", f"{user_points} 🌍", f"-{round((user_points - average_points) / average_points * 100)} %", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
+        else:
+            st.metric("Your points", f"{user_points} 🌍", f"Average", delta_color="off", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
+    
+    with colb:
+        # add a st.metric to show the user's number of query
+        if user_num_query > average_query:
+            st.metric("Eco-friendly queries", f"{user_num_query} 🌿", f"{round((user_num_query - average_query) / average_query * 100)} %", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
+        elif user_num_query < average_query:
+            st.metric("Eco-friendly queries", f"{user_num_query} 🌿", f"{round((user_num_query - average_query) / average_query * 100)} %", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
+        else:
+            st.metric("Eco-friendly queries", f"{user_num_query} 🌿", f"Average", delta_color="off", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
 ############
 
 ############ Function calling
@@ -107,6 +177,15 @@ available_functions = {
 
 st.title("PROMPTERRA")
 
+# put logo in the center
+col1, col2, col3 = st.columns([1, 6, 1])
+with col1:
+    st.write("")
+with col2:
+    st.image("ecognize logo.png", use_column_width=True)
+with col3:
+    st.write("")
+
 collector = FeedbackCollector(
     project="ecognize",
     email=st.secrets.TRUBRICS_EMAIL,
@@ -127,17 +206,33 @@ with st.spinner(text="In progress..."):
     name, authentication_status, username = authenticator.login("Login", "main")
 
 # write a welcome message after the user logs in
-if name is not None:
-    user_points = load_user_points(username)
-    st.sidebar.write(f"Hello, {name.split()[0]}! Your points: {user_points}")
+if authentication_status:
+    # user_points = load_user_points(username)
+    st.sidebar.title(f"Hello, {name.split()[0]}!")
 
-    st.info(
-        f"""
-        Welcome to **PR🌍MPTERRA** by EC🌍GNIZE 
 
-        PR🌍MPTERRA is a platform that trains users to use OpenAI's GPT in a more sustainable way.
-        """
-    )
+    # Initialize session state for metrics
+    if 'metrics' not in st.session_state:
+        st.session_state['metrics'] = load_all_from_mongo(username)
+
+    # create two cols
+    col41, col42 = st.sidebar.columns(2)
+    add_metrics(col41, col42, username)
+
+    # add refresh button to reload the mongo db
+    st.sidebar.button("Refresh points", type="primary", on_click=refresh_metrics(), use_container_width=True)
+
+    # st.sidebar.markdown(f"""
+    #                     <p style='font-family': Garet'>Hello, {name.split()[0]}! <p> <br>
+    #                     <p style='font-family': Garet'>Your points: {user_points}</p>
+    #                     """, unsafe_allow_html=True)
+                        
+
+    # rewrite st info with html font family Garet
+    st.markdown("""
+                <p style='font-family': Garet'>Welcome to <b>PROMPTERRA</b> by <b>ECOGNIZE</b> 🌍</p> <br>
+                <p style='font-family': Garet'>PROMPTERRA is a platform that trains users to use OpenAI's GPT in a more sustainable way. To get started, type a prompt in the chat box on the left and click enter. The AI will respond with a summary of your prompt. You can then provide feedback on the response to gain points!</p>
+                """, unsafe_allow_html=True)
 
     feedback = None
 
@@ -164,22 +259,9 @@ if name is not None:
     #         "You have selected the largest, least sustainable model.  Please only use this model if you need an extensive answer."
     #     )
 
-    # show a ranking of the user points
-    st.sidebar.title("Leaderboard")
-    # load the csv file with the user points
-    user_points_pd = pd.read_csv("user_points.csv")
-    # sort the users by points
-    user_points_pd = user_points_pd.sort_values(by=["user_points"], ascending=False)
-    if len(user_points_pd) >= 5:
-        # Create a new DataFrame for top 5 users
-        top_users_data = {
-            "Rank": ["🥇", "🥈", "🥉", "🏅", "🏅"],
-            "Username": [user_points_pd.iloc[i]['username'] for i in range(5)],
-            "Points": [user_points_pd.iloc[i]['user_points'] for i in range(5)]
-        }
-
-        top_users_df = pd.DataFrame(top_users_data)
-        st.sidebar.dataframe(top_users_df, hide_index=True, use_container_width=True)
+    # should be the end of the sidebar
+    with st.sidebar:
+        authenticator.logout("Logout", "main", key="unique_key")
 
     if "messages" not in st.session_state:
         st.session_state.messages = [{"role": "system", "content": RETRIEVAL_PROMPT}]
@@ -233,10 +315,10 @@ if name is not None:
             if feedback:
                 st.session_state['feedback'][feedback_key] = feedback
                 # Assuming 1 point for each feedback
-                user_points = update_user_points(username, 1)
+                update_user(username, 2, 0)
                 # add a notification that the user has earned a point
                 st.sidebar.success(
-                    f"You have earned a point! Your points: {user_points}"
+                    f"You have earned +2 points for giving feedback!"
                 )
 
     if prompt := st.chat_input("Ask me anything"):
@@ -380,5 +462,10 @@ if name is not None:
         # After getting the response, add it to the session state
         st.session_state['messages'].append({"role": "assistant", "content": reply_text})
 
+elif st.session_state["authentication_status"] is False:
+    st.error("Username/password is incorrect")
+
+elif st.session_state["authentication_status"] is None:
+    st.info("Please enter your username and password")
     # if feedback:
     #     st.write(feedback)
