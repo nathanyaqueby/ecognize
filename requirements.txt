@@ -5,5 +5,7 @@ streamlit-feedback
 streamlit-extras
 trubrics
 pymongo
+tenacity
+loguru
 numpy
 sumy
