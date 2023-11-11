@@ -206,7 +206,7 @@ if name is not None:
 
     if prompt := st.chat_input("What would you like to summarize?"):
         # adjust prompt to add sources in a specified format
-        prompt2 = "Answer the following query and summarize it in 1-2 paragraphs:\n" + prompt + " Write the sources you used in the following format: [source1], [source2], [source3]..."
+        prompt2 = "Answer the following query and summarize it in 1-2 paragraphs:\n" + prompt + " Write the sources you used in the following format: - Source 1: [link] - Source 2: [link] - Source 3: [link]"
 
         # prompt2 = "Answer the following query and summarize it in 1-2 paragraphs:\n" + prompt
         new_message_id = len(st.session_state['messages'])  # Unique ID for the new message
@@ -224,7 +224,7 @@ if name is not None:
                     {"role": m["role"], "content": m["content"]}
                     for m in st.session_state.messages
                 ],
-                max_tokens=200,
+                max_tokens=300,
                 stream=True,
             ):
                 full_response += response.choices[0].delta.get("content", "")
