@@ -98,16 +98,21 @@ if name is not None:
     for n, msg in enumerate(st.session_state.messages):
         # st.chat_message(msg["role"]).write(msg["content"])
 
-        if msg["role"] == "assistant" and n > 1:
+        if msg["role"] == "assistant":
             feedback_key = f"feedback_{int(n/2)}"
 
             if feedback_key not in st.session_state:
                 st.session_state[feedback_key] = 0
 
-            streamlit_feedback(
+             # Render feedback widget
+            feedback = streamlit_feedback(
                 **feedback_kwargs,
                 key=feedback_key,
             )
+
+            # Update the feedback state
+            if feedback:
+                st.session_state[feedback_key] = feedback
 
     if prompt := st.chat_input("What would you like to summarize?"):
         # adjust prompt to create a summary of what the user wants to know about
