@@ -101,13 +101,31 @@ if authentication_status:
     user_points_pd = pd.read_csv("user_points.csv")
     average_points = user_points_pd["user_points"].mean()
 
-    # add a st.metric to show how much the user's points are above or less than the average in percentage
-    if user_points > average_points:
-        st.sidebar.metric("Your points", f"{user_points} 🌿", f"{round((user_points - average_points) / average_points * 100)} %", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
-    elif user_points < average_points:
-        st.sidebar.metric("Your points", f"{user_points} 🌿", f"-{round((user_points - average_points) / average_points * 100)} %", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
-    else:
-        st.sidebar.metric("Your points", f"{user_points} 🌿", f"Average", delta_color="off", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
+    # get the user's number of query from the database
+    user_num_query = user_points_pd[user_points_pd["username"] == username]["num_query"].values[0]
+    average_query = user_points_pd["num_query"].mean()
+
+    # create two cols
+    col1, col2 = st.sidebar.columns([1, 1])
+
+    with col1:
+        # add a st.metric to show how much the user's points are above or less than the average in percentage
+        if user_points > average_points:
+            st.sidebar.metric("Your points", f"{user_points} ❇️", f"{round((user_points - average_points) / average_points * 100)} %", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
+        elif user_points < average_points:
+            st.sidebar.metric("Your points", f"{user_points} ❇️", f"-{round((user_points - average_points) / average_points * 100)} %", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
+        else:
+            st.sidebar.metric("Your points", f"{user_points} ❇️", f"Average", delta_color="off", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
+    
+    with col2:
+        # add a st.metric to show the user's number of query
+        if user_num_query > average_query:
+            st.sidebar.metric("Your queries", f"{user_num_query} 🌿", f"{round((user_num_query - average_query) / average_query * 100)} %", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
+        elif user_num_query < average_query:
+            st.sidebar.metric("Your queries", f"{user_num_query} 🌿", f"-{round((user_num_query - average_query) / average_query * 100)} %", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
+        else:
+            st.sidebar.metric("Your queries", f"{user_num_query} 🌿", f"Average", delta_color="off", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
+
 
     # st.sidebar.markdown(f"""
     #                     <p style='font-family': Garet'>Hello, {name.split()[0]}! <p> <br>
