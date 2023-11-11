@@ -169,7 +169,7 @@ if authentication_status:
     add_metrics(col41, col42, username)
 
     # add refresh button to reload the mongo db
-    st.sidebar.button("Refresh points", type="primary", on_click=refresh_metrics(), use_column_width=True)
+    st.sidebar.button("Refresh points", type="primary", on_click=refresh_metrics(), use_container_width=True)
 
     # st.sidebar.markdown(f"""
     #                     <p style='font-family': Garet'>Hello, {name.split()[0]}! <p> <br>
