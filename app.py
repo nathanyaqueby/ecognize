@@ -83,7 +83,7 @@ if name is not None:
     if "messages" not in st.session_state:
         st.session_state.messages = []
     if "feedback" not in st.session_state:
-        st.session_state.feedback = []
+        st.session_state.feedback = {}
 
     feedback_kwargs = {
         "feedback_type": "thumbs",
