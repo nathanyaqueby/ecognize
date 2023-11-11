@@ -11,7 +11,26 @@ from trubrics.integrations.streamlit import FeedbackCollector
 import uuid
 from pymongo import MongoClient
 from bson import ObjectId
+from search import search_bing
+import json
 
+
+TIMEOUT = 60
+
+RETRIEVAL_PROMPT = """
+You are a powerful AI chat assistant that can answer user questions by retrieving relevant information from various sources. If you call any functions, please follow strictly the function descriptions and infer the parameters from the predefined ones based on the message history until this point. Do not make up your own function call parameters that are not defined.
+"""
+
+GENERATION_PROMPT = """
+You are a powerful AI chat assistant that can answer user questions by retrieving relevant information from various sources. Be careful to answer the question using only the information from function calls. If they do not return any answers or the answers don't match the question, just say you cannot answer the question and stop there. 
+If you used one or several retrieved information sources in your answer, please cite the relevant sources at the end of your response, starting with the text "SOURCES: " (always in plural), followed by a JSON standard formatted structure, as in below sample: 
+SOURCES: {
+    "sources": [
+        "source/url 1", 
+        "source/url 2 etc"
+    ]
+}
+"""
 
 st.set_page_config(
     layout="wide",
@@ -76,6 +95,32 @@ def load_from_mongo(username):
     document = collection.find_one(query)
     return document
 ############
+
+############ Function calling
+functions = [
+    {
+        "name": "search_bing",
+        "description": "Search for relevant hits from Bing.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": f"Query string to search the posts for, inferred from the user message and ALWAYS translated to ENGLISH before passing on to the function. Sample query styles: 'expected development of stainless steel market pricing in December 2022' or 'possible energy price developments over January-March 2023'. Note: today is {dt.datetime.utcfromtimestamp(UTC_TIMESTAMP).strftime('%Y-%m-%d')}."
+                },
+                "search_index": {
+                    "type": "string",
+                    "description": "Name of the Bing Search index to use. Valid choices: 'DEFAULT'. If 'DEFAULT' is used, the search will be performed on the entire web."
+                }
+            },
+            "required": ["query", "search_index"]
+        }
+    }
+]
+
+available_functions = {
+    "search_bing": search_bing,
+}
 
 # put logo in the center
 col1, col2, col3 = st.columns([1, 6, 1])
@@ -281,40 +326,136 @@ if authentication_status:
 
         with st.chat_message("assistant"):
             message_placeholder = st.empty()
-            full_response = ""
-            for response in openai.ChatCompletion.create(
-                model=st.session_state["openai_model"],
-                messages=[
-                    {"role": m["role"], "content": m["content"]}
-                    for m in st.session_state.messages
-                ],
-                temperature=0.2,
+            # For streaming, we need to loop through the response generator
+            reply_text = ""
+            function_name = ""
+            function_args = ""
+            for chunk in openai.ChatCompletion.create(
+                model="gpt-35-turbo",
+                deployment_id="gpt-35-turbo",
+                messages=st.session_state['messages'],
                 max_tokens=300,
+                timeout=TIMEOUT,
+                function_call="auto",
+                functions=functions,
                 stream=True,
             ):
-                full_response += response.choices[0].delta.get("content", "")
-                message_placeholder.markdown(full_response + "▌")
+                delta = chunk["choices"][0].get("delta", {})
+                content = delta.get("content", None)
+                function_call = delta.get("function_call", None)
+                if function_call is not None:
+                    function_name += function_call.get("name", "")
+                    function_args += function_call.get("arguments", "")
+                if content is not None:
+                    reply_text += content
 
-            logged_prompt = collector.log_prompt(
-                config_model={"model": st.session_state["openai_model"]},
-                prompt=prompt,
-                generation=full_response,
-                session_id=st.session_state.session_id,
-                # tags="prompterra",
-                user_id=str(st.secrets["TRUBRICS_EMAIL"])
-                )
-            st.session_state.prompt_ids.append(logged_prompt.id)
+                    # Sanitize output
+                    if reply_text.startswith("AI: "):
+                        reply_text = reply_text.split("AI: ", 1)[1]
+                
+                # Continuously write the response in Streamlit
+                message_placeholder.markdown(reply_text)
 
-            message_placeholder.markdown(full_response)
+            # Collect full function call
+            if function_name != "" and function_args != "":
+                function_call = {"name": function_name, "arguments": function_args}
+            else:
+                function_call = None
 
-            # update sustainability score
-            update_user(username, 0, 1)
-            # add title to the chart
-            # st.markdown("### Sustainability score over time")
-            # st.bar_chart(np.random.randn(30, 3))
+            if function_call is None:  # Not a function call, return normal message
+                # Sanitize
+                if reply_text.startswith("AI: "):
+                    reply_text = reply_text.split("AI: ", 1)[1]
 
+                message_placeholder.markdown(reply_text)
+
+            # Model wants to call a function and call it, if appropriate
+            else:
+                # Read the function call from model response and execute it
+                fun_name = function_call.get("name", None)
+                if fun_name is not None and fun_name and fun_name in available_functions:
+                    function = available_functions[fun_name]
+                else:
+                    function = None
+                fun_args = function_call.get("arguments", None)
+                if fun_args is not None and isinstance(fun_args, str):
+                    fun_args = json.loads(fun_args)
+
+                query = fun_args.get("query", None)
+
+                # Check in the cache if the response is already there and if so just return the relevant answer
+                # NOT IMPLEMENTED YET - GO STRAIGHT TO RETRIEVAL AND NEW GENERATION
+
+                if function is None:
+                    fun_res = ["Error, no function specified"]
+                elif query is None:
+                    fun_res = ["Error, no query specified"]
+                else:
+                    with st.status(f"Called function `{fun_name}`"):
+                        st.json(fun_args, expanded=True)
+                        fun_res = function(fun_args)
+
+                # Build an abridged, temporary message to be fed into a more powerful GPT-4 model to limit the number of tokens
+
+                # Proceed to the secondary call to generate results
+                messages = [{"role": "system", "content": GENERATION_PROMPT}]
+                if query is not None:
+                    messages.append({"role": "user", "content": query})
+                messages.extend([{"role": "function", "name": fun_name, "content": one_fun_res} for one_fun_res in fun_res])
+
+                # For streaming, we need to loop through the response generator
+                reply_text = ""
+                for chunk in openai.ChatCompletion.create(
+                    model="gpt-4",
+                    deployment_id="gpt-4",
+                    messages=messages,
+                    max_tokens=1500,
+                    timeout=TIMEOUT,
+                    function_call=None,
+                    functions=None,
+                    stream=True,
+                ):
+                    delta = chunk["choices"][0].get("delta", {})
+                    content = delta.get("content", None)
+                    function_call = delta.get("function_call", None)
+                    if function_call is not None:
+                        function_name += function_call.get("name", "")
+                        function_args += function_call.get("arguments", "")
+                    if content is not None:
+                        reply_text += content
+
+                        # Sanitize output
+                        if reply_text.startswith("AI: "):
+                            reply_text = reply_text.split("AI: ", 1)[1]
+                    
+                    # Continuously write the response in Streamlit
+                    message_placeholder.markdown(reply_text)
+
+                # # Collect full function call
+                # if function_name != "" and function_args != "":
+                #     function_call = {"name": function_name, "arguments": function_args}
+                # else:
+                #     function_call = None
+                    
+                # Sanitize
+                if reply_text.startswith("AI: "):
+                    reply_text = reply_text.split("AI: ", 1)[1]
+
+                message_placeholder.markdown(reply_text)
+
+                logged_prompt = collector.log_prompt(
+                    config_model={"model": "gpt-4"},
+                    prompt=prompt,
+                    generation=reply_text,
+                    session_id=st.session_state.session_id,
+                    # tags=tags,
+                    user_id=str(st.secrets["TRUBRICS_EMAIL"])
+                    )
+                
+                st.session_state.prompt_ids.append(logged_prompt.id)
+                
         # After getting the response, add it to the session state
-        st.session_state['messages'].append({"role": "assistant", "content": full_response, "id": new_message_id + 1})
+        st.session_state['messages'].append({"role": "assistant", "content": reply_text})
 
 elif st.session_state["authentication_status"] is False:
     st.error("Username/password is incorrect")
