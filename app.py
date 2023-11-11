@@ -107,11 +107,12 @@ if name is not None:
     user_points_pd = user_points_pd.sort_values(by=["user_points"], ascending=False)
     # show the top 5 users with emojis
     st.sidebar.markdown(
-        f"🥇 {user_points_pd.iloc[0]['username']}: {user_points_pd.iloc[0]['user_points']},
-        \n🥈 {user_points_pd.iloc[1]['username']}: {user_points_pd.iloc[1]['user_points']},
-        \n🥉 {user_points_pd.iloc[2]['username']}: {user_points_pd.iloc[2]['user_points']},
-        \n🏅 {user_points_pd.iloc[3]['username']}: {user_points_pd.iloc[3]['user_points']},
-        \n🏅 {user_points_pd.iloc[4]['username']}: {user_points_pd.iloc[4]['user_points']}"
+        f"🥇 {user_points_pd.iloc[0]['username']}: {user_points_pd.iloc[0]['user_points']}",
+        f"🥈 {user_points_pd.iloc[1]['username']}: {user_points_pd.iloc[1]['user_points']}",
+        f"🥉 {user_points_pd.iloc[2]['username']}: {user_points_pd.iloc[2]['user_points']}",
+        f"🏅 {user_points_pd.iloc[3]['username']}: {user_points_pd.iloc[3]['user_points']}",
+        f"🏅 {user_points_pd.iloc[4]['username']}: {user_points_pd.iloc[4]['user_points']}",
+        unsafe_allow_html=True
     )
 
     # add a notification that the user picks the most sustainable option for the model if they pick "gpt-3.5-turbo"
