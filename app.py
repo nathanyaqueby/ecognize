@@ -40,7 +40,7 @@ if name is not None:
         f"""
         Welcome to ECOGNIZE, {name.split()[0]}! 🌍
 
-        ECOGNIZE is a prototype that uses OpenAI's GPT-3 to answer questions about sustainability.  It is a prototype for the Junction 2021 hackathon.
+        ECOGNIZE is a prototype that uses OpenAI's GPT to answer questions about sustainability.  It is a prototype for the Junction 2023 hackathon.
         To get started, type a question in the chat box.  The AI assistant will answer your question and provide a summary of the answer.
         To learn more about ECOGNIZE, click the "About" button in the top right corner.
         """
