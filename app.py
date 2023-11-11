@@ -123,25 +123,16 @@ if name is not None:
             # add title to the chart
             st.markdown("### Sustainability score over time")
             st.bar_chart(np.random.randn(30, 3))
-        
-        for n, msg in enumerate(st.session_state.messages):
-        # st.chat_message(msg["role"]).write(msg["content"])
 
-            if msg["role"] == "assistant":
-                feedback_key = f"feedback_{int(n/2)}"
+            # Render feedback widget
+            feedback = streamlit_feedback(
+                **feedback_kwargs,
+                key=f"feedback_{len(st.session_state.messages)}",
+            )
 
-                if feedback_key not in st.session_state:
-                    st.session_state[feedback_key] = 0
-
-                # Render feedback widget
-                feedback = streamlit_feedback(
-                    **feedback_kwargs,
-                    key=feedback_key,
-                )
-
-                # Update the feedback state
-                if feedback:
-                    st.session_state[feedback_key] = feedback
+            # Update the feedback state
+            if feedback:
+                st.session_state[f"feedback_{len(st.session_state.messages)}"] = feedback
 
         st.session_state.messages.append({"role": "assistant", "content": full_response})
 
