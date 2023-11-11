@@ -10,3 +10,4 @@ loguru
 numpy
 sumy
 langchain
+tiktoken
