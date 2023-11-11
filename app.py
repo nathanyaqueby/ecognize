@@ -59,8 +59,8 @@ def update_user(username, user_point, sustainability_score):
     """ Update the user's points and sustainability score based on username """
     user_document = collection.find_one({"username": username})
 
-    new_user_point = 100
-    new_sustainability_score = 2
+    new_user_point = user_document["user_point"] + user_point
+    new_sustainability_score = user_document["sustainability_score"] + sustainability_score
 
     if user_document:
         result = collection.update_one(
