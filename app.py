@@ -62,6 +62,7 @@ if name is not None:
             "gpt-4",
             "gpt-4-1106-preview"
         ],
+        label_visibility="collapsed",
         index=1,
     )
 
