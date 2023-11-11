@@ -141,6 +141,8 @@ if name is not None:
         st.session_state.messages = []
     if "prompt_ids" not in st.session_state:
         st.session_state["prompt_ids"] = []
+    if "session_id" not in st.session_state:
+        st.session_state["session_id"] = str(uuid.uuid4())
     if "feedback" not in st.session_state:
         st.session_state.feedback = {}
 
