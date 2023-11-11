@@ -69,7 +69,7 @@ col1, col2, col3 = st.columns([1, 6, 1])
 with col1:
     st.write("")
 with col2:
-    st.image("ecognize logo.png", width=200)
+    st.image("ecognize logo.png", use_column_width=True)
 with col3:
     st.write("")
 
