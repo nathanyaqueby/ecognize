@@ -2,5 +2,6 @@ streamlit
 openai==0.28.0
 streamlit-authenticator
 streamlit-feedback
+streamlit-extras
 numpy
 sumy

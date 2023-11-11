@@ -6,6 +6,7 @@ from streamlit_feedback import streamlit_feedback
 import yaml
 import numpy as np
 import pandas as pd
+from streamlit_extras.app_logo import add_logo
 
 st.set_page_config(
     layout="wide",
@@ -18,6 +19,8 @@ st.set_page_config(
         "About": "Unlike OpenAI, our default model is most sustainable one. Learn to adjust your prompts to help the planet!",
     },
 )
+
+add_logo("ecognize logo.png", height=100)
 
 ############ functions
 def _submit_feedback(user_response, emoji=None):
@@ -55,7 +58,7 @@ def update_user_points(username, points):
     return new_points
 ############
 
-st.title("ECOGNIZE prototype")
+st.title("PROMPTERRA")
 
 with open("config.yaml") as file:
     config = yaml.load(file, Loader=SafeLoader)
@@ -77,11 +80,9 @@ if name is not None:
 
     st.info(
         f"""
-        Welcome to **ECOGNIZE** 🌍
+        Welcome to **PROMPTERRA** by ECOGNIZE 🌍
 
-        ECOGNIZE is a prototype that uses OpenAI's GPT to answer questions about sustainability.  It is a prototype for the Junction 2023 hackathon.
-        To get started, type a question in the chat box.  The AI assistant will answer your question and provide a summary of the answer.
-        To learn more about ECOGNIZE, click the "About" button in the top right corner.
+        PROMPTERRA is a platform that trains users to use OpenAI's GPT in a more sustainable way. To get started, type a prompt in the chat box on the left and click enter. The AI will respond with a summary of your prompt. You can then provide feedback on the response to gain points!
         """
     )
 
