@@ -31,16 +31,19 @@ with st.spinner(text="In progress..."):
 
     name, authentication_status, username = authenticator.login("Login", "main")
 
-# write a welcome message
-st.info(
-    f"""
-    Welcome to ECOGNIZE, {name.split[0]}! 🌍
+print(authentication_status)
 
-    ECOGNIZE is a prototype that uses OpenAI's GPT-3 to answer questions about sustainability.  It is a prototype for the Junction 2021 hackathon.
-    To get started, type a question in the chat box.  The AI assistant will answer your question and provide a summary of the answer.
-    To learn more about ECOGNIZE, click the "About" button in the top right corner.
-    """
-)
+# write a welcome message after the user logs in
+if authentication_status == "authenticated":
+    st.info(
+        f"""
+        Welcome to ECOGNIZE, {name.split[0]}! 🌍
+
+        ECOGNIZE is a prototype that uses OpenAI's GPT-3 to answer questions about sustainability.  It is a prototype for the Junction 2021 hackathon.
+        To get started, type a question in the chat box.  The AI assistant will answer your question and provide a summary of the answer.
+        To learn more about ECOGNIZE, click the "About" button in the top right corner.
+        """
+    )
 
 openai.api_key = st.secrets["openai_api_key"]
 
