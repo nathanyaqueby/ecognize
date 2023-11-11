@@ -203,7 +203,7 @@ available_functions = {
     "search_bing": search_bing,
 }
 
-st.title("PR🌍MPTERRA")
+# st.title("PR🌍MPTERRA")
 
 # put logo in the center
 col1, col2, col3 = st.columns([1, 6, 1])
