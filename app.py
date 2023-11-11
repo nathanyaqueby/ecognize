@@ -25,10 +25,12 @@ def _submit_feedback(user_response, emoji=None):
     return user_response.update({"some metadata": 123})
 
 def load_user_points(username):
+    if user_points := st.session_state.get('user_points', {}).get(username, None):
+        return user_points
     # load the csv file with the user points
-    user_points = pd.read_csv("user_points.csv")
+    user_points_pd = pd.read_csv("user_points.csv")
     # get the points for the user
-    points = user_points[user_points["username"] == username]["user_points"]
+    points = user_points_pd[user_points_pd["username"] == username]["user_points"].values[0]
     return points
 
 def update_user_points(username, points):
@@ -38,9 +40,9 @@ def update_user_points(username, points):
     new_points = current_points + points
     st.session_state.setdefault('user_points', {})[username] = new_points
     # update the csv file with the user points
-    user_points = pd.read_csv("user_points.csv")
-    user_points[user_points["username"] == username]["user_points"] = new_points
-    user_points.to_csv("user_points.csv", index=False)
+    user_points_pd = pd.read_csv("user_points.csv")
+    user_points_pd[user_points_pd["username"] == username]["user_points"] = new_points
+    user_points_pd.to_csv("user_points.csv", index=False)
     return new_points
 ############
 
