@@ -25,6 +25,11 @@ df = pd.read_csv(uploaded_file)
 # Add a dropdown list to select any "text" column from the dataframe
 selection = st.selectbox("Select a base text", df["text"].values)
 
+if st.button("Randomize"):
+    selection = np.random.choice(df["text"].values)
+
+st.text("Selected text: " + selection)
+
 base_vector = eval(df[df["text"] == selection]["embedding"].values[0])
 
 # Create a new dataframe where the selected line is taken out
