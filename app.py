@@ -1,5 +1,6 @@
 import openai
 import streamlit as st
+import json
 from yaml.loader import SafeLoader
 import streamlit_authenticator as stauth
 from streamlit_feedback import streamlit_feedback
@@ -8,8 +9,10 @@ import numpy as np
 import pandas as pd
 from streamlit_extras.app_logo import add_logo
 from trubrics.integrations.streamlit import FeedbackCollector
+from search import search_bing
 import uuid
 
+TIMEOUT = 60
 
 st.set_page_config(
     layout="wide",
@@ -60,6 +63,32 @@ def update_user_points(username, points):
     st.session_state.setdefault('user_points', {})[username] = new_points
     return new_points
 ############
+
+############ Function calling
+functions = [
+    {
+        "name": "search_bing",
+        "description": "Search for relevant hits from Bing.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": f"Query string to search the posts for, inferred from the user message and ALWAYS translated to ENGLISH before passing on to the function. Sample query styles: 'expected development of stainless steel market pricing in December 2022' or 'possible energy price developments over January-March 2023'. Note: today is {dt.datetime.utcfromtimestamp(UTC_TIMESTAMP).strftime('%Y-%m-%d')}."
+                },
+                "search_index": {
+                    "type": "string",
+                    "description": "Name of the Bing Search index to use. Valid choices: 'DEFAULT'. If 'DEFAULT' is used, the search will be performed on the entire web."
+                }
+            },
+            "required": ["query", "search_index"]
+        }
+    }
+]
+
+available_functions = {
+    "search_bing": search_bing,
+}
 
 st.title("PROMPTERRA")
 
@@ -199,7 +228,6 @@ if name is not None:
     if prompt := st.chat_input("What would you like to summarize?"):
         # adjust prompt to create a summary of what the user wants to know about
         # if "list" in prompt.lower():
-        #     prompt2 = ""
         prompt2 = "Answer the following query and summarize it in 1-2 paragraphs:\n" + prompt
         new_message_id = len(st.session_state['messages'])  # Unique ID for the new message
         st.session_state['messages'].append({"role": "user", "content": prompt, "id": new_message_id})
@@ -217,10 +245,46 @@ if name is not None:
                     for m in st.session_state.messages
                 ],
                 max_tokens=200,
+                timeout=TIMEOUT,
+                function_call="auto",
+                functions=functions,
                 stream=True,
             ):
-                full_response += response.choices[0].delta.get("content", "")
-                message_placeholder.markdown(full_response + "▌")
+                first_choice_message = response["choices"][0]["message"]
+                if first_choice_message["content"] is not None:
+                    reply_text = first_choice_message["content"].strip()
+                    function_call = None
+                else:
+                    reply_text = ""
+                    function_call = first_choice_message["function_call"]
+
+            # Check in the cache if the response is already there
+            # Check whether the model wants to call a function and call it, if appropriate
+            if function_call is not None:
+                # Read the function call from model response and execute it (if appropriate)
+                fun_name = function_call.get("name", None)
+                if fun_name is not None and fun_name and fun_name in available_functions:
+                    function = available_functions[fun_name]
+                else:
+                    function = None
+                fun_args = function_call.get("arguments", None)
+                if fun_args is not None and isinstance(fun_args, str):
+                    fun_args = json.loads(fun_args)
+                if function is not None:
+                    fun_res = function(fun_args)
+                else:
+                    fun_res = ["Error, no function specified"]
+                out_messages = [{"role": "function", "name": fun_name, "content": one_fun_res} for one_fun_res in fun_res]
+            else:   # Not a function call, return normal message
+                # Sanitize
+                if reply_text.startswith("AI: "):
+                    reply_text = reply_text.split("AI: ", 1)[1]
+
+                out_messages = [{"role": "assistant", "content": reply_text}]
+
+
+            
+
 
             logged_prompt = collector.log_prompt(
                 config_model={"model": st.session_state["openai_model"]},
@@ -230,6 +294,7 @@ if name is not None:
                 # tags=tags,
                 user_id=str(st.secrets["TRUBRICS_EMAIL"])
                 )
+            
             st.session_state.prompt_ids.append(logged_prompt.id)
 
             message_placeholder.markdown(full_response)
@@ -239,6 +304,7 @@ if name is not None:
 
         # After getting the response, add it to the session state
         st.session_state['messages'].append({"role": "assistant", "content": full_response, "id": new_message_id + 1})
+
 
     # if feedback:
     #     st.write(feedback)
