@@ -90,14 +90,14 @@ def load_all_from_mongo(username):
     # load all users nqueby, tianyi, cmakafui, angelineov, outokumpu from mongo
     users = ["nqueby", "tianyi", "cmakafui", "angelineov", "outokumpu"]
     sustainability_scores = []
-    user_points = 0
+    user_total_points = 0
 
     for user in users:
         user_document = load_from_mongo(user)
         sustainability_scores.append(user_document["sustainability_score"])
-        user_points += user_document["user_point"]
+        user_total_points += user_document["user_point"]
 
-    average_points = user_points / len(users)
+    average_points = user_total_points / len(users)
 
     # get the user's number of query from the database
     average_query = np.mean(sustainability_scores)
