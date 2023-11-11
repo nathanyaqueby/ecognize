@@ -121,6 +121,7 @@ if authentication_status:
         # st.write("Here")
         # add a st.metric to show the user's number of query
         if user_num_query > average_query:
+            st.write("Here")
             st.sidebar.metric("Eco-friendly queries", f"{user_num_query} 🌿", f"{round((user_num_query - average_query) / average_query * 100)} %", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
         elif user_num_query < average_query:
             st.sidebar.metric("Eco-friendly queries", f"{user_num_query} 🌿", f"-{round((user_num_query - average_query) / average_query * 100)} %", help="Accumulate sustainability points by giving feedback to the LLM's responses or ask a question that is already saved in the cache.")
