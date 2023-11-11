@@ -110,4 +110,4 @@ if name is not None:
             st.bar_chart(np.random.randn(30, 3))
         st.session_state.messages.append({"role": "assistant", "content": full_response})
 
-    st.debug(feedback)
+    st.write(feedback)
