@@ -39,7 +39,7 @@ SOURCES: {
 """
 
 # Embedding model
-embeddings = OpenAIEmbeddings()
+embeddings = OpenAIEmbeddings(openai_api_key=st.secrets["OPENAI_API_KEY"])
 
 st.set_page_config(
     layout="wide",
