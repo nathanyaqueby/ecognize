@@ -89,11 +89,11 @@ with st.spinner(text="In progress..."):
 # write a welcome message after the user logs in
 if name is not None:
     user_points = load_user_points(username)
-    st.sidebar.write(f"Hello, {name.split()[0]}! Your points: {user_points}")
+    # st.sidebar.write(f"Hello, {name.split()[0]}! Your points: {user_points}")
 
     st.sidebar.markdown(f"""
                         <p style='font-family': Garet'>Hello, {name.split()[0]}! <p> <br>
-                        <p style='font-family: GaretBold'>Your points: {user_points}</p> <br>
+                        <p style='font-family': Garet'>Your points: {user_points}</p> <br>
                         """, unsafe_allow_html=True)
                         
 
