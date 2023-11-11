@@ -104,7 +104,7 @@ if name is not None:
             if feedback_key not in st.session_state:
                 st.session_state[feedback_key] = 0
 
-            feedback = streamlit_feedback(
+            streamlit_feedback(
                 **feedback_kwargs,
                 key=feedback_key,
             )
