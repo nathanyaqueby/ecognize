@@ -2,21 +2,21 @@ html, body, [class*="css"] {
     font-family: 'Garet', sans-serif; 
     font-style: normal;
     /* font-size: 18px; */
-    font-weight: 500;
+    font-weight: 300;
     src: url("fonts/Garet-Book.ttf") format("truetype");
 }
 
 @font-face {
     font-family: "Garet";
     font-style: normal;
-    font-weight: 500;
+    font-weight: 300;
     src: url("fonts/Garet-Book.ttf") format("truetype");
 }
 
 @font-face {
     font-family: "GaretBold";
     font-style: bold;
-    font-weight: 300;
+    font-weight: 500;
     color: #009EE7;
     src: url("fonts/Garet-Heavy.ttf") format("truetype");
 }
@@ -24,6 +24,6 @@ html, body, [class*="css"] {
 h1, h2, h3, h4, h5, h6 {
     font-family: 'GaretBold', sans-serif;
     font-style: bold;
-    font-weight: 300;
+    font-weight: 500;
     color: #009EE7;
 }
