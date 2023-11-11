@@ -2,6 +2,7 @@ import openai
 import streamlit as st
 from yaml.loader import SafeLoader
 import streamlit_authenticator as stauth
+from streamlit_feedback import streamlit_feedback
 import yaml
 import numpy as np
 
@@ -103,7 +104,10 @@ if name is not None:
                 full_response += response.choices[0].delta.get("content", "")
                 message_placeholder.markdown(full_response + "▌")
             message_placeholder.markdown(full_response)
+            feedback = streamlit_feedback(feedback_type="thumbs")
             # add title to the chart
             st.markdown("### Sustainability score over time")
             st.bar_chart(np.random.randn(30, 3))
         st.session_state.messages.append({"role": "assistant", "content": full_response})
+
+    st.debug(feedback)
