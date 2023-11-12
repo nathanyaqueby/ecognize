@@ -11,3 +11,4 @@ numpy
 sumy
 langchain
 tiktoken
+humanize
