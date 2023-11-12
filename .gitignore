@@ -2,3 +2,4 @@
 devenv*
 __pycache__
 secrets.toml
+.env

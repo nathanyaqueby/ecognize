@@ -84,6 +84,7 @@ db = client["junction"]
 
 # Select your collection
 collection = db["sustainability_scores"]
+embeddings_collection = db["embeddings"]
 
 def update_user(username, user_point, sustainability_score):
     """ Update the user's points and sustainability score based on username """
@@ -113,7 +114,6 @@ def initialize_cache():
     
 def add_to_cache(query, embedding, answer, expires_at):
     pass
-
 
 # Callback function for refresh button
 def refresh_metrics():
@@ -262,6 +262,9 @@ with st.spinner(text="In progress..."):
 # write a welcome message after the user logs in
 if authentication_status:
     # user_points = load_user_points(username)
+    # add st.info to explain the app
+    st.info("For demo purposes, we set the cache expiration time to 5 minutes so you can test the difference between a cached and a non-cached query instantly.")
+
     st.sidebar.title(f"Hello, {name.split()[0]}!")
 
     # Initialize session state for metrics
@@ -394,7 +397,7 @@ if authentication_status:
     # Save cache locally to CSV (if it has a length > 0)
     if "cache" in st.session_state and len(st.session_state.cache) > 0:
         with st.sidebar:
-            st.write("Cached queries")
+            st.title("Cached queries", help="These are the queries that have been cached so far. You can ask them again to gain points because then we don't need to call the LLM!")
             display_df = st.session_state.cache.copy()
             # Count TTL as the difference between the expiration date and the current date
             display_df["expires"] = display_df["expires_at"].apply(lambda x: humanize.naturaltime(dt.timedelta(seconds=UTC_TIMESTAMP - x)))
@@ -490,7 +493,10 @@ if authentication_status:
                     if len(temp_cache) > 0 and temp_cache.iloc[0]["similarity"] > CACHE_SIMILARITY_THRESHOLD:
                         # Directly add that answer as the chat response
                         reply_text = temp_cache.iloc[0]["answer"]
-                        st.session_state['messages'].append({"role": "assistant", "content": f"(Cached Answer)\n\n{reply_text}"})
+                        cached_query = temp_cache.iloc[0]["query"]
+                        st.session_state['messages'].append({"role": "assistant", "content": f"(We found a cached answer! 🌿)\n\nThe query is: {cached_query}\n\nResponse: {reply_text}"})
+                        # add points to the user
+                        update_user(username, 2, 1)
                         st.rerun()
 
                 if function is None:
@@ -598,7 +604,7 @@ elif st.session_state["authentication_status"] is False:
     st.error("Username/password is incorrect")
 
 elif st.session_state["authentication_status"] is None:
-    st.info("Please enter your username and password")
+    st.info("Please enter your username and password. Use the default username and password (outokumpu: junction2023) if you are not registered yet!")
 
     # if feedback:
     #     st.write(feedback)
