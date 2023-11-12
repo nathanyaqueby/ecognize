@@ -1,4 +1,5 @@
-![ECOGNIZE - Outokumpu (Junction 2023)- banner1](https://github.com/nathanyaqueby/ecognize/assets/73829218/c154edb7-93c6-4e2a-a733-453d6a6e8a27)
+
+![11](https://github.com/nathanyaqueby/ecognize/assets/73829218/3d8ea80e-9e57-402e-bc3e-d7247c3a4c8a)
 
 # PR🌍MPTERRA (by team ECOGNIZE)
 
@@ -11,7 +12,7 @@ Designed for those who seek quality information for decision-making, but also ca
 
 ## How to run
 
-Go to [https://ecognize.streamlit.app/](https://ecognize.streamlit.app/) to look at the deployed working prototype.
+Go to [http://www.prompterra.pro/](http://www.prompterra.pro/) to look at the deployed working prototype.
 Login with the following information:
 - Username: `outokumpu`
 - Password: `junction2023`
@@ -40,8 +41,8 @@ Login with the following information:
    Share your thoughts on our AI's responses and we'll thank you with points. Your feedback helps us improve, making PR🌍MPTERRA even better for everyone :)
   
 ## Research & implementation
-![Flowchart drawio](https://github.com/nathanyaqueby/ecognize/assets/73829218/eec5c0cf-875b-4eb5-8921-fd5afa5a3a96)
 
+![Flowchart drawio](https://github.com/nathanyaqueby/ecognize/assets/73829218/68be00d4-3291-423b-894d-e4aa38fa82e5)
 
 ## Team ECOGNIZE
 - Angeline Jayanegara
