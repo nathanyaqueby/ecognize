@@ -287,7 +287,7 @@ if authentication_status:
     feedback = None
 
     if "messages" not in st.session_state:
-        st.session_state.messages = [{"role": "system", "content": RETRIEVAL_PROMPT}]
+        st.session_state.messages = [{"role": "system", "content": RETRIEVAL_PROMPT}, {"role": "assistant", "content": "To get started, type a prompt in the chatbox and click enter. You can provide feedback on the response or ask a cached prompt to gain points."}]
     if "session_id" not in st.session_state:
         st.session_state["session_id"] = str(uuid.uuid4())
     if "feedback" not in st.session_state:
@@ -314,11 +314,6 @@ if authentication_status:
     for n, msg in enumerate(st.session_state["messages"]):
         if msg["role"] == "system":
             continue
-        # set default 
-        if len(msg) == 1:
-            st.write("here")
-            with st.chat_message("assistant"):
-                st.markdown("To get started, type a prompt in the chatbox and click enter. You can provide feedback on the response or ask a cached prompt to gain points.")
         contents = msg["content"]
         sources = ""
         with st.chat_message(msg["role"]):
