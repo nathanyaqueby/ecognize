@@ -1,14 +1,13 @@
-# PR🌍MPTERRA (by team ECOGNIZE)
-
 ![ECOGNIZE - Outokumpu (Junction 2023)- banner1](https://github.com/nathanyaqueby/ecognize/assets/73829218/c154edb7-93c6-4e2a-a733-453d6a6e8a27)
 
-## Inspiration
+# PR🌍MPTERRA (by team ECOGNIZE)
+
 As programmers, we always tend to copy-paste our code into ChatGPT (along with their errors) no matter how long the prompt is or how much computation power it takes in the background.
-This is not a sustainable approach - especially with 180.5 million users on the platform that are doing the exact same thing.
+This is not a sustainable approach, especially with 180.5 million users on the platform doing the same thing. 
 
 With PR🌍MPTERRA, we want to help people learn how to build the perfect sustainable prompts!
 
-Designed for those who seek quality information for decision-making, but also care deeply about our planet's health. It's your go-to AI assistant, balancing efficiency with sustainability.
+Designed for those who seek quality information for decision-making, but also care deeply about our planet's health. It's your go-to AI assistant that balances efficiency with sustainability as written in the Outokumpu challenge for HackJunction 2023 ✨
 
 ## How to run
 
