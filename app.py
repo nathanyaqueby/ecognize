@@ -13,6 +13,8 @@ from trubrics.integrations.streamlit import FeedbackCollector
 from search import search_bing
 import uuid
 import datetime as dt
+import humanize
+import traceback
 from langchain.embeddings.openai import OpenAIEmbeddings
 
 UTC_TIMESTAMP = int(dt.datetime.utcnow().timestamp())
@@ -392,8 +394,11 @@ if authentication_status:
     # Save cache locally to CSV (if it has a length > 0)
     if "cache" in st.session_state and len(st.session_state.cache) > 0:
         with st.sidebar:
-            st.write("Cache")
-            st.dataframe(st.session_state.cache)
+            st.write("Cached queries")
+            display_df = st.session_state.cache.copy()
+            # Count TTL as the difference between the expiration date and the current date
+            display_df["expires"] = display_df["expires_at"].apply(lambda x: humanize.naturaltime(dt.timedelta(seconds=UTC_TIMESTAMP - x)))
+            st.dataframe(display_df[["query", "expires"]], hide_index=True, use_container_width=True)
         st.session_state.cache.to_csv("cache.csv", index=False)
 
     if prompt := st.chat_input("Ask me anything"):
@@ -418,7 +423,7 @@ if authentication_status:
                 messages=st.session_state['messages'],
                 max_tokens=1000,
                 timeout=TIMEOUT,
-                function_call="auto",
+                function_call={"name": "search_bing"},
                 functions=functions,
                 stream=True,
             ):
@@ -478,7 +483,7 @@ if authentication_status:
                     try:
                         temp_cache["similarity"] = temp_cache["embedding"].apply(lambda x: np.dot(np.array(eval(x)), np.array(query_embedding)) / (np.linalg.norm(np.array(eval(x))) * np.linalg.norm(np.array(query_embedding))))
                     except: # x might already be a list
-                        temp_cache["similarity"] = temp_cache["embedding"].apply(lambda x: np.dot(np.array(x), np.array(query_embedding)) / (np.linalg.norm(np.array(x)) * np.linalg.norm(np.array(query_embedding))))
+                        traceback.print_exc()
                     # Sort the cache by similarity, descending
                     temp_cache = temp_cache.sort_values(by=["similarity"], ascending=False)
                     # See if the top result is above a certain threshold
@@ -568,14 +573,14 @@ if authentication_status:
                 # Add the query, its embedding, the answer (reply_text) and the expiration date to the cache. Expires in 1 day (5 minutes for testing)
                 st.session_state.cache = pd.concat([
                     st.session_state.cache,
-                    pd.DataFrame(
+                    pd.DataFrame([
                         {
-                            "query": [query],
-                            "embedding": [query_embedding],
-                            "answer": [reply_text],
-                            "expires_at": [UTC_TIMESTAMP + 5 * 60]
+                            "query": query,
+                            "embedding": json.dumps(query_embedding),
+                            "answer": reply_text,
+                            "expires_at": UTC_TIMESTAMP + 5 * 60
                         }
-                    )
+                    ])
                 ])
 
                 # st.session_state.prompt_ids.append(logged_prompt.id)
