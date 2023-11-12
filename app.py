@@ -182,7 +182,7 @@ def evaluate_prompt(prompt):
     criteria = {
         "uses_renewable_energy": True,  # Example: determine based on user's location or choice
         # "uses_smallest_model": st.session_state["openai_model"] == "gpt-3.5-turbo",
-        "length_under_500": len(prompt) < 500,
+        "good_prompt_length": len(prompt) < 500,
         "no_ambiguous_words": not has_ambiguous_words(prompt), 
         "no_need_for_clarification": True  # TODO: implement logic to determine this
     }
@@ -281,8 +281,7 @@ if authentication_status:
 
     # rewrite st info with html font family Garet
     st.markdown("""
-                <p style='font-family': Garet'>Welcome to <b>PROMPTERRA</b> by <b>ECOGNIZE</b> 🌍</p> <br>
-                <p style='font-family': Garet'>PROMPTERRA is a platform that trains users to use OpenAI's GPT in a more sustainable way. To get started, type a prompt in the chat box on the left and click enter. The AI will respond with a summary of your prompt. You can then provide feedback on the response to gain points!</p>
+                <p style='font-family': Garet'>Let's take care of our only TERRA, one PROMPT at the time with team <b>ECOGNIZE</b> 🌍 We offer a platform that trains users to write prompts in a more sustainable way!</p>
                 """, unsafe_allow_html=True)
 
     feedback = None
@@ -300,7 +299,7 @@ if authentication_status:
         st.session_state['checklist'] = {
             "uses_renewable_energy": True,
             # "uses_smallest_model": False,
-            "length_under_500": False,
+            "good_prompt_length": False,
             "no_ambiguous_words": False,
             "no_need_for_clarification": False
         }
@@ -315,6 +314,10 @@ if authentication_status:
     for n, msg in enumerate(st.session_state["messages"]):
         if msg["role"] == "system":
             continue
+        # set default 
+        if len(msg) == 1:
+            with st.chat_message("assistant"):
+                st.markdown("To get started, type a prompt in the chatbox and click enter. You can provide feedback on the response or ask a cached prompt to gain points.")
         contents = msg["content"]
         sources = ""
         with st.chat_message(msg["role"]):
@@ -406,7 +409,7 @@ if authentication_status:
             st.markdown(prompt)
 
         update_checklist(prompt)
-        display_checklist()
+        # display_checklist()
 
         with st.chat_message("assistant"):
             # For streaming, we need to loop through the response generator
