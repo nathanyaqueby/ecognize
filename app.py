@@ -316,6 +316,7 @@ if authentication_status:
             continue
         # set default 
         if len(msg) == 1:
+            st.write("here")
             with st.chat_message("assistant"):
                 st.markdown("To get started, type a prompt in the chatbox and click enter. You can provide feedback on the response or ask a cached prompt to gain points.")
         contents = msg["content"]
