@@ -392,6 +392,8 @@ if authentication_status:
                     f"You have earned +2 points for giving feedback!"
                 )
 
+    if "prompt" in st.session_state:
+        update_checklist(st.session_state["prompt"])
     display_checklist()
     
     # Save cache locally to CSV (if it has a length > 0)
@@ -401,6 +403,8 @@ if authentication_status:
             display_df = st.session_state.cache.copy()
             # Count TTL as the difference between the expiration date and the current date
             display_df["expires"] = display_df["expires_at"].apply(lambda x: humanize.naturaltime(dt.timedelta(seconds=UTC_TIMESTAMP - x)))
+            # Remove entries that have expired
+            display_df = display_df[display_df["expires_at"] > UTC_TIMESTAMP]
             st.dataframe(display_df[["query", "expires"]], hide_index=True, use_container_width=True)
         st.session_state.cache.to_csv("cache.csv", index=False)
 
@@ -590,9 +594,7 @@ if authentication_status:
 
         # After getting the response, add it to the session state
         st.session_state['messages'].append({"role": "assistant", "content": reply_text})
-        
-        update_checklist(prompt)
-        # display_checklist()
+
         st.rerun()
 
     # should be the end of the sidebar
