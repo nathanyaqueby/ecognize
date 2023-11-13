@@ -263,7 +263,7 @@ with st.spinner(text="In progress..."):
 if authentication_status:
     # user_points = load_user_points(username)
     # add st.info to explain the app
-    st.info("For demo purposes, we set the cache expiration time to 5 minutes so you can test the difference between a cached and a non-cached query instantly.")
+    st.info("For demo purposes, we set the cache expiration time to 5 minutes so you can test the difference between a cached and a non-cached query instantly.", icon="ℹ️")
 
     st.sidebar.title(f"Hello, {name.split()[0]}!")
 
@@ -286,7 +286,7 @@ if authentication_status:
 
     # rewrite st info with html font family Garet
     st.markdown("""
-                <p style='font-family': Garet'>Let's take care of our only TERRA, one PROMPT at the time with team <b>ECOGNIZE</b> 🌍 We offer a platform that trains users to write prompts in a more sustainable way! To get started, type a prompt in the chatbox and click enter. You can provide feedback on the response or ask a cached prompt to gain points.</p>
+                <p style='font-family': Garet'>Let's take care of our only TERRA, one PROMPT at the time with team <b>ECOGNIZE</b> 🌍 We offer a platform that trains users to write prompts in a more sustainable way! To get started, type a question or message in the chatbox and click enter. You can provide feedback on the response or ask a cached prompt to gain points.</p>
                 """, unsafe_allow_html=True)
 
     feedback = None
