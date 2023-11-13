@@ -415,7 +415,7 @@ if authentication_status:
         update_checklist(prompt)
         # display_checklist()
 
-        with st.chat_message("assistant"):
+        with st.chat_message("assistant", avatar="🌍"):
             # For streaming, we need to loop through the response generator
             reply_text = ""
             function_name = ""
