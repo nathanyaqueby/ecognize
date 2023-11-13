@@ -494,7 +494,7 @@ if authentication_status:
                         # Directly add that answer as the chat response
                         reply_text = temp_cache.iloc[0]["answer"]
                         cached_query = temp_cache.iloc[0]["query"]
-                        st.session_state['messages'].append({"role": "assistant", "content": f"(We found a cached answer! 🌿)\n\nThe query is: {cached_query}\n\nResponse: {reply_text}"})
+                        st.session_state['messages'].append({"role": "assistant", "content": f"[We found a cached answer! 🌿] Cached query was: {cached_query}\n\n{reply_text}\n\n[Not the question you were asking? Please rate the answer so our team can improve the experience. Thanks!]"})
                         # add points to the user
                         update_user(username, 2, 1)
                         st.rerun()
