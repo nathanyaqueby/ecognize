@@ -412,9 +412,6 @@ if authentication_status:
         with st.chat_message("user"):
             st.markdown(prompt)
 
-        update_checklist(prompt)
-        # display_checklist()
-
         with st.chat_message("assistant", avatar="🌍"):
             # For streaming, we need to loop through the response generator
             reply_text = ""
@@ -593,7 +590,9 @@ if authentication_status:
 
         # After getting the response, add it to the session state
         st.session_state['messages'].append({"role": "assistant", "content": reply_text})
-
+        
+        update_checklist(prompt)
+        # display_checklist()
         st.rerun()
 
     # should be the end of the sidebar
